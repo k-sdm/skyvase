@@ -238,7 +238,7 @@ export default function Home() {
               fontWeight: 300,
             }}
           >
-            think back to a memory in your life that&apos;s important to you
+            think back to a memory in your life that means a lot to you
           </p>
 
           <input
@@ -246,7 +246,7 @@ export default function Home() {
             type="text"
             autoComplete="off"
             spellCheck={false}
-            placeholder="enter the day when it happened"
+            placeholder="enter the date when it happened"
             value={dateInput}
             onChange={(e) => setDateInput(e.target.value)}
             style={{
@@ -262,7 +262,7 @@ export default function Home() {
             type="text"
             autoComplete="off"
             spellCheck={false}
-            placeholder="and where in the world it happened"
+            placeholder="and where you were in the world"
             value={placeInput}
             onChange={(e) => setPlaceInput(e.target.value)}
             style={{
