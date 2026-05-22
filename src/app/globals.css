@@ -8,45 +8,77 @@
 
 html {
   height: 100%;
-  /* Near-black blue — matches sky shader horizon if Safari shows a sliver below the canvas. */
-  background: #010108;
+  background: var(
+    --sky-chrome-gradient,
+    linear-gradient(180deg, #5a8ec5 0%, #1a2a3d 100%)
+  );
 }
 
 html,
 body {
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100lvh;
   min-height: -webkit-fill-available;
 }
 
 body {
   overflow: hidden;
-  background: #010108;
+  background: transparent;
   font-family: var(--font-kh-teka), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Full-screen layers: use dynamic viewport height so iOS Safari fills
-   the visible area when the bottom URL bar is shown (100vh is too tall). */
-.viewport-fill {
+/* Bleed under Safari’s floating URL bar / status area (viewport-fit: cover). */
+.viewport-bleed {
   position: fixed;
-  top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
+  top: calc(-1 * env(safe-area-inset-top, 0px));
   width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: calc(
+    100lvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)
+  );
+  min-height: calc(
+    100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px)
+  );
   min-height: -webkit-fill-available;
   display: block;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.viewport-fill {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  min-height: 100lvh;
+  min-height: -webkit-fill-available;
+  display: block;
+}
+
+/* Same gradient as html — visible if the WebGL canvas is short on iOS. */
+.sky-backdrop {
+  z-index: 0;
+  pointer-events: none;
+  background: var(
+    --sky-chrome-gradient,
+    linear-gradient(180deg, #5a8ec5 0%, #1a2a3d 100%)
+  );
+}
+
+canvas.viewport-bleed {
+  z-index: 1;
 }
 
 .site-footer {
   position: fixed;
   left: 0;
   right: 0;
+  z-index: 3;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
   text-align: center;
   padding: clamp(0.6rem, 2vw, 0.9rem);

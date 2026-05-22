@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { PAIR_COUNT } from "@/components/memory-vase";
 import { VaseCarousel } from "@/components/vase-carousel";
+import { applySkyChrome, applyWhiteChrome } from "@/lib/sky-chrome";
 
 const SkyShader = dynamic(
   () => import("@/components/sky-shader").then((m) => m.SkyShader),
@@ -192,6 +193,14 @@ export default function Home() {
   const yShift = lerp(WINTER.shift, SUMMER.shift, t);
   const vStretch = lerp(WINTER.stretch, SUMMER.stretch, t);
 
+  useEffect(() => {
+    if (vaseMode) {
+      applyWhiteChrome();
+    } else {
+      applySkyChrome(t);
+    }
+  }, [t, vaseMode]);
+
   const ready = parsedDate !== null && resolved !== null;
 
   function goToVase() {
@@ -235,6 +244,7 @@ export default function Home() {
 
   return (
     <>
+      {!vaseMode && <div className="viewport-bleed sky-backdrop" aria-hidden />}
       <SkyShader yShift={yShift} vStretch={vStretch} />
 
       {/* Hidden preloader so the WebM is already in cache before the user
@@ -341,6 +351,7 @@ export default function Home() {
         <main
           className="viewport-fill"
           style={{
+            zIndex: 2,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",

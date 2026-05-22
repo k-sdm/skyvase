@@ -123,20 +123,61 @@ const PITCH_DEG = 22;
 // Easing factor per frame (~60fps). Smaller = slower, more dramatic.
 const SKY_EASE = 0.045;
 
-// Matches the shader’s darkest horizon tint so any letterboxing on iOS
-// Safari blends in instead of showing pure black.
-const SKY_CLEAR = 0x010108;
+const SKY_CLEAR = 0x1a2a3d;
+
+function isMobileSafari() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return /iPhone|iPad|iPod/i.test(ua) && /Safari/i.test(ua) && !/CriOS|FxiOS/i.test(ua);
+}
 
 function readCanvasSize(canvas: HTMLCanvasElement) {
+  const vv = window.visualViewport;
+  if (vv && isMobileSafari()) {
+    return {
+      width: Math.round(vv.width),
+      height: Math.round(vv.height),
+      offsetTop: vv.offsetTop,
+      offsetLeft: vv.offsetLeft,
+      useVisualViewport: true as const,
+    };
+  }
   const rect = canvas.getBoundingClientRect();
   const w = Math.round(rect.width);
   const h = Math.round(rect.height);
-  if (w > 0 && h > 0) return { width: w, height: h };
-  const vv = window.visualViewport;
+  if (w > 0 && h > 0) {
+    return { width: w, height: h, offsetTop: 0, offsetLeft: 0, useVisualViewport: false as const };
+  }
   return {
     width: Math.round(vv?.width ?? window.innerWidth),
     height: Math.round(vv?.height ?? window.innerHeight),
+    offsetTop: vv?.offsetTop ?? 0,
+    offsetLeft: vv?.offsetLeft ?? 0,
+    useVisualViewport: false as const,
   };
+}
+
+function applyCanvasLayout(
+  canvas: HTMLCanvasElement,
+  layout: ReturnType<typeof readCanvasSize>
+) {
+  if (layout.useVisualViewport) {
+    canvas.style.position = "fixed";
+    canvas.style.top = `${layout.offsetTop}px`;
+    canvas.style.left = `${layout.offsetLeft}px`;
+    canvas.style.width = `${layout.width}px`;
+    canvas.style.height = `${layout.height}px`;
+    canvas.style.right = "auto";
+    canvas.style.bottom = "auto";
+  } else {
+    canvas.style.position = "";
+    canvas.style.top = "";
+    canvas.style.left = "";
+    canvas.style.width = "";
+    canvas.style.height = "";
+    canvas.style.right = "";
+    canvas.style.bottom = "";
+  }
 }
 
 export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
@@ -213,10 +254,11 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
     animate();
 
     function onResize() {
-      const { width, height } = readCanvasSize(canvas);
-      camera.aspect = width / height;
+      const layout = readCanvasSize(canvas);
+      applyCanvasLayout(canvas, layout);
+      camera.aspect = layout.width / layout.height;
       applyProjection(camera, currentRef.current.yShift, currentRef.current.vStretch);
-      renderer.setSize(width, height, false);
+      renderer.setSize(layout.width, layout.height, false);
     }
     onResize();
 
@@ -242,7 +284,7 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
   return (
     <canvas
       ref={canvasRef}
-      className="viewport-fill"
+      className="viewport-bleed"
     />
   );
 }
