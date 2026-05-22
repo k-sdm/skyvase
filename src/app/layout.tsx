@@ -27,7 +27,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: "cover",
   interactiveWidget: "resizes-visual",
-  themeColor: "#000000",
+  themeColor: "#010108",
 };
 
 export default function RootLayout({
@@ -37,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${khTeka.variable} antialiased`}>
-      <body className="m-0 overflow-hidden bg-black">
+      <body className="m-0 overflow-hidden">
         {children}
         <Analytics />
       </body>

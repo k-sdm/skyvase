@@ -123,6 +123,22 @@ const PITCH_DEG = 22;
 // Easing factor per frame (~60fps). Smaller = slower, more dramatic.
 const SKY_EASE = 0.045;
 
+// Matches the shader’s darkest horizon tint so any letterboxing on iOS
+// Safari blends in instead of showing pure black.
+const SKY_CLEAR = 0x010108;
+
+function readCanvasSize(canvas: HTMLCanvasElement) {
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.round(rect.width);
+  const h = Math.round(rect.height);
+  if (w > 0 && h > 0) return { width: w, height: h };
+  const vv = window.visualViewport;
+  return {
+    width: Math.round(vv?.width ?? window.innerWidth),
+    height: Math.round(vv?.height ?? window.innerHeight),
+  };
+}
+
 export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const targetRef = useRef({ yShift, vStretch });
@@ -139,22 +155,18 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
   );
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const el = canvasRef.current;
+    if (!el) return;
+    const canvas: HTMLCanvasElement = el;
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(SKY_CLEAR);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.26;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      60,
-      window.innerWidth / window.innerHeight,
-      100,
-      2000000
-    );
+    const camera = new THREE.PerspectiveCamera(60, 1, 100, 2000000);
     camera.position.set(0, 200, 0);
 
     const pitchRad = (PITCH_DEG * Math.PI) / 180;
@@ -201,15 +213,26 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
     animate();
 
     function onResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const { width, height } = readCanvasSize(canvas);
+      camera.aspect = width / height;
       applyProjection(camera, currentRef.current.yShift, currentRef.current.vStretch);
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(width, height, false);
     }
+    onResize();
+
     window.addEventListener("resize", onResize);
+    window.visualViewport?.addEventListener("resize", onResize);
+    window.visualViewport?.addEventListener("scroll", onResize);
+
+    const resizeObserver = new ResizeObserver(onResize);
+    resizeObserver.observe(canvas);
 
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener("scroll", onResize);
+      resizeObserver.disconnect();
       renderer.dispose();
       skyGeo.dispose();
       skyMat.dispose();

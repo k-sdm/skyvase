@@ -8,7 +8,8 @@
 
 html {
   height: 100%;
-  background: #000;
+  /* Near-black blue — matches sky shader horizon if Safari shows a sliver below the canvas. */
+  background: #010108;
 }
 
 html,
@@ -20,7 +21,7 @@ body {
 
 body {
   overflow: hidden;
-  background: #000;
+  background: #010108;
   font-family: var(--font-kh-teka), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -39,6 +40,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
+  display: block;
 }
 
 .site-footer {
