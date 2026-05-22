@@ -37,6 +37,10 @@ export async function POST(req: NextRequest) {
       },
     ],
     metadata,
+    payment_intent_data: {
+      metadata,
+      description,
+    },
     shipping_address_collection: { allowed_countries: ["GB"] },
     billing_address_collection: "required",
     phone_number_collection: { enabled: true },
