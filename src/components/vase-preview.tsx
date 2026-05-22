@@ -15,7 +15,7 @@ const COLOUR_MAP: ColourStop[] = [
   { voltage: 64, hex: "#DF5675" },
 ];
 
-const V1 = 20, V2_START = 20, V2_END = 54, V3 = 64;
+const V1 = 20, V2_START = 20, V3 = 64;
 const Z1_BASE = 0.25, Z1_RANGE = 0.50, Z3_MIN = 0.015, Z3_MAX = 0.075;
 
 function hexToRgb(h: string): [number, number, number] {
@@ -74,13 +74,13 @@ function buildGradientCSS(zones: { zone1: number; zone2: number; zone3: number }
   const z2E = (zones.zone1 + zones.zone2) * 100;
 
   stops.push(`${voltageToColour(V1)} 0%`, `${voltageToColour(V1)} ${z1E.toFixed(1)}%`);
-  for (let i = 0; i <= 12; i++) {
-    const f = i / 12;
+  for (let i = 0; i <= 20; i++) {
+    const f = i / 20;
     const pct = z1E + f * (z2E - z1E);
-    const v = V2_START + f * (V2_END - V2_START);
+    const v = V2_START + f * (V3 - V2_START);
     stops.push(`${voltageToColour(v)} ${pct.toFixed(1)}%`);
   }
-  stops.push(`${voltageToColour(V3)} ${z2E.toFixed(1)}%`, `${voltageToColour(V3)} 100%`);
+  stops.push(`${voltageToColour(V3)} 100%`);
   return `linear-gradient(to bottom, ${stops.join(", ")})`;
 }
 
@@ -102,13 +102,12 @@ export function buildVaseGradientStops(date: Date, lat: number): GradientStop[] 
 
   stops.push({ offset: 0, color: voltageToColour(V1) });
   stops.push({ offset: z1End, color: voltageToColour(V1) });
-  for (let i = 0; i <= 12; i++) {
-    const f = i / 12;
+  for (let i = 0; i <= 20; i++) {
+    const f = i / 20;
     const offset = z1End + f * (z2End - z1End);
-    const v = V2_START + f * (V2_END - V2_START);
+    const v = V2_START + f * (V3 - V2_START);
     stops.push({ offset, color: voltageToColour(v) });
   }
-  stops.push({ offset: z2End, color: voltageToColour(V3) });
   stops.push({ offset: 1, color: voltageToColour(V3) });
   return stops;
 }
