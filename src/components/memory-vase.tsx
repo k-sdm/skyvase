@@ -33,7 +33,7 @@ export function MemoryVase({ date, lat }: MemoryVaseProps) {
       {videoIdx !== null && (
         <video
           key={videoIdx}
-          src={`/videos/${videoIdx}.mp4`}
+          src={`/videos/${videoIdx}.webm`}
           autoPlay
           loop
           muted
