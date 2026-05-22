@@ -218,7 +218,6 @@ export default function Home() {
           style={{
             position: "fixed",
             inset: 0,
-            zIndex: 5,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -293,7 +292,7 @@ export default function Home() {
               fontSize: "1.2rem",
               fontWeight: 300,
               cursor: ready ? "pointer" : "default",
-              mixBlendMode: "screen",
+              mixBlendMode: "lighten",
             }}
           >
             see your vase
