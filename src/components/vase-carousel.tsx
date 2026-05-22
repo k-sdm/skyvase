@@ -127,12 +127,12 @@ export function VaseCarousel({ date, lat, pairIdx }: VaseCarouselProps) {
       <div
         style={{
           position: "absolute",
-          bottom: "clamp(0.3rem, 1.2vw, 0.55rem)",
+          bottom: "clamp(0.75rem, 2.5vw, 1.25rem)",
           left: "50%",
           transform: "translateX(-50%)",
           display: "flex",
-          gap: "0.18rem",
-          padding: "0.18rem 0.3rem",
+          gap: "0.4rem",
+          padding: "0.4rem 0.6rem",
           borderRadius: "999px",
           background: "rgba(0, 0, 0, 0.32)",
           backdropFilter: "blur(4px)",
@@ -147,8 +147,8 @@ export function VaseCarousel({ date, lat, pairIdx }: VaseCarouselProps) {
             key={i}
             style={{
               display: "block",
-              width: "0.085rem",
-              height: "0.085rem",
+              width: "0.42rem",
+              height: "0.42rem",
               borderRadius: "50%",
               background: i === index ? "#fff" : "rgba(255,255,255,0.45)",
               transition: "background 200ms ease",
