@@ -278,24 +278,55 @@ export default function Home() {
             onClick={goToVase}
             disabled={!ready}
             aria-hidden={!ready}
+            aria-label="see your vase"
             style={{
               pointerEvents: ready ? "auto" : "none",
               opacity: ready ? 1 : 0,
               transform: ready ? "translateY(0)" : "translateY(8px)",
               transition: "opacity 0.5s ease, transform 0.5s ease",
-              background: "#ffffff",
-              color: "#000000",
+              background: "transparent",
               border: "none",
-              borderRadius: "9999px",
-              padding: "0.8rem 2.2rem",
-              fontFamily: "inherit",
-              fontSize: "1.2rem",
-              fontWeight: 300,
+              padding: 0,
               cursor: ready ? "pointer" : "default",
-              mixBlendMode: "lighten",
+              display: "block",
             }}
           >
-            see your vase
+            <svg
+              width="220"
+              height="56"
+              viewBox="0 0 220 56"
+              role="presentation"
+              aria-hidden="true"
+            >
+              <defs>
+                <mask id="see-your-vase-cutout">
+                  <rect width="220" height="56" fill="#fff" />
+                  <text
+                    x="110"
+                    y="28"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="#000"
+                    style={{
+                      fontFamily: "var(--font-kh-teka), system-ui, sans-serif",
+                      fontSize: 20,
+                      fontWeight: 300,
+                      letterSpacing: "0.01em",
+                    }}
+                  >
+                    see your vase
+                  </text>
+                </mask>
+              </defs>
+              <rect
+                width="220"
+                height="56"
+                rx="28"
+                ry="28"
+                fill="#fff"
+                mask="url(#see-your-vase-cutout)"
+              />
+            </svg>
           </button>
         </main>
       )}
