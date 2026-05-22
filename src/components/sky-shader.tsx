@@ -120,24 +120,23 @@ const fragmentShader = /* glsl */ `
 
 const PITCH_DEG = 22;
 
+// Easing factor per frame (~60fps). Smaller = slower, more dramatic.
+const SKY_EASE = 0.045;
+
 export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const paramsRef = useRef({ yShift, vStretch });
-  paramsRef.current = { yShift, vStretch };
+  const targetRef = useRef({ yShift, vStretch });
+  const currentRef = useRef({ yShift, vStretch });
+  targetRef.current = { yShift, vStretch };
 
-  function applyProjection(cam: THREE.PerspectiveCamera) {
-    cam.updateProjectionMatrix();
-    const p = paramsRef.current;
-    cam.projectionMatrix.elements[5] *= p.vStretch;
-    cam.projectionMatrix.elements[9] = p.yShift;
-  }
-
-  useEffect(() => {
-    const cam = cameraRef.current;
-    if (!cam) return;
-    applyProjection(cam);
-  }, [yShift, vStretch]);
+  const applyProjection = useCallback(
+    (cam: THREE.PerspectiveCamera, y: number, s: number) => {
+      cam.updateProjectionMatrix();
+      cam.projectionMatrix.elements[5] *= s;
+      cam.projectionMatrix.elements[9] = y;
+    },
+    []
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -157,7 +156,6 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
       2000000
     );
     camera.position.set(0, 200, 0);
-    cameraRef.current = camera;
 
     const pitchRad = (PITCH_DEG * Math.PI) / 180;
     camera.lookAt(
@@ -165,7 +163,7 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
       200 + Math.sin(pitchRad) * 1000,
       -Math.cos(pitchRad) * 1000
     );
-    applyProjection(camera);
+    applyProjection(camera, currentRef.current.yShift, currentRef.current.vStretch);
 
     const skyGeo = new THREE.SphereGeometry(450000, 32, 15);
     const skyMat = new THREE.ShaderMaterial({
@@ -193,13 +191,18 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
     let animId: number;
     function animate() {
       animId = requestAnimationFrame(animate);
+      const target = targetRef.current;
+      const cur = currentRef.current;
+      cur.yShift += (target.yShift - cur.yShift) * SKY_EASE;
+      cur.vStretch += (target.vStretch - cur.vStretch) * SKY_EASE;
+      applyProjection(camera, cur.yShift, cur.vStretch);
       renderer.render(scene, camera);
     }
     animate();
 
     function onResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
-      applyProjection(camera);
+      applyProjection(camera, currentRef.current.yShift, currentRef.current.vStretch);
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
     window.addEventListener("resize", onResize);
@@ -207,12 +210,11 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", onResize);
-      cameraRef.current = null;
       renderer.dispose();
       skyGeo.dispose();
       skyMat.dispose();
     };
-  }, []);
+  }, [applyProjection]);
 
   return (
     <canvas
