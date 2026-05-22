@@ -10,7 +10,7 @@ const khTeka = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "sky vase",
+  title: "SkyVase",
   description:
     "Custom anodised titanium vases encoding a date and location into a unique colour gradient.",
 };

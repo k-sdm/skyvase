@@ -1,6 +1,6 @@
-# sky vase — Web Store
+# SkyVase — Web Store
 
-E-commerce front-end for the sky vase anodised titanium vase project.
+E-commerce front-end for the SkyVase anodised titanium vase project.
 
 ## Stack
 

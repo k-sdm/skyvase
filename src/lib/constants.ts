@@ -1,5 +1,5 @@
 export const PRODUCT = {
-  name: "sky vase",
+  name: "SkyVase",
   tagline: "Your sky, cast in titanium",
   description:
     "A 200mm titanium vase with a colour gradient uniquely encoding a date and location. " +
