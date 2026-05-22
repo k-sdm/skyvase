@@ -8,10 +8,7 @@
 
 html {
   height: 100%;
-  background: var(
-    --sky-chrome-gradient,
-    linear-gradient(180deg, #5a8ec5 0%, #1a2a3d 100%)
-  );
+  background: var(--page-chrome, #ffffff);
 }
 
 html,
@@ -60,14 +57,11 @@ body {
   display: block;
 }
 
-/* Same gradient as html — visible if the WebGL canvas is short on iOS. */
+/* Matches html — visible if the WebGL canvas is short on iOS. */
 .sky-backdrop {
   z-index: 0;
   pointer-events: none;
-  background: var(
-    --sky-chrome-gradient,
-    linear-gradient(180deg, #5a8ec5 0%, #1a2a3d 100%)
-  );
+  background: var(--page-chrome, #ffffff);
 }
 
 canvas.viewport-bleed {

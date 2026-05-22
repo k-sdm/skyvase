@@ -123,7 +123,7 @@ const PITCH_DEG = 22;
 // Easing factor per frame (~60fps). Smaller = slower, more dramatic.
 const SKY_EASE = 0.045;
 
-const SKY_CLEAR = 0x1a2a3d;
+const SKY_CLEAR = 0xffffff;
 
 function isMobileSafari() {
   if (typeof navigator === "undefined") return false;

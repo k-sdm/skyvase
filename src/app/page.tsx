@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { PAIR_COUNT } from "@/components/memory-vase";
 import { VaseCarousel } from "@/components/vase-carousel";
-import { applySkyChrome, applyWhiteChrome } from "@/lib/sky-chrome";
+import { applyPageChrome } from "@/lib/sky-chrome";
 
 const SkyShader = dynamic(
   () => import("@/components/sky-shader").then((m) => m.SkyShader),
@@ -194,12 +194,8 @@ export default function Home() {
   const vStretch = lerp(WINTER.stretch, SUMMER.stretch, t);
 
   useEffect(() => {
-    if (vaseMode) {
-      applyWhiteChrome();
-    } else {
-      applySkyChrome(t);
-    }
-  }, [t, vaseMode]);
+    applyPageChrome();
+  }, []);
 
   const ready = parsedDate !== null && resolved !== null;
 
