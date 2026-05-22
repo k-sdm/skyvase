@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const khTeka = localFont({
@@ -10,9 +11,14 @@ const khTeka = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "SkyVase",
+  title: "sky vase",
   description:
     "Custom anodised titanium vases encoding a date and location into a unique colour gradient.",
+  icons: {
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -28,7 +34,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${khTeka.variable} antialiased`}>
-      <body className="m-0 overflow-hidden bg-black">{children}</body>
+      <body className="m-0 overflow-hidden bg-black">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
