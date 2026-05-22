@@ -89,6 +89,30 @@ export function buildVaseGradient(date: Date, lat: number): string {
   return buildGradientCSS(zones);
 }
 
+export interface GradientStop {
+  offset: number;
+  color: string;
+}
+
+export function buildVaseGradientStops(date: Date, lat: number): GradientStop[] {
+  const zones = computeZones(date, lat);
+  const z1End = zones.zone1;
+  const z2End = zones.zone1 + zones.zone2;
+  const stops: GradientStop[] = [];
+
+  stops.push({ offset: 0, color: voltageToColour(V1) });
+  stops.push({ offset: z1End, color: voltageToColour(V1) });
+  for (let i = 0; i <= 12; i++) {
+    const f = i / 12;
+    const offset = z1End + f * (z2End - z1End);
+    const v = V2_START + f * (V2_END - V2_START);
+    stops.push({ offset, color: voltageToColour(v) });
+  }
+  stops.push({ offset: z2End, color: voltageToColour(V3) });
+  stops.push({ offset: 1, color: voltageToColour(V3) });
+  return stops;
+}
+
 export interface VasePreviewProps {
   date: Date;
   lat: number;
