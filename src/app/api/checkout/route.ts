@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { PRODUCT } from "@/lib/constants";
+import { SHIPPING_COUNTRIES } from "@/lib/shipping";
+
+type CheckoutCreateParams = NonNullable<
+  Parameters<typeof stripe.checkout.sessions.create>[0]
+>;
+type AllowedCountry = NonNullable<
+  CheckoutCreateParams["shipping_address_collection"]
+>["allowed_countries"][number];
 
 export async function POST(req: NextRequest) {
   const { date, location, placeName } = await req.json();
@@ -41,7 +49,9 @@ export async function POST(req: NextRequest) {
       metadata,
       description,
     },
-    shipping_address_collection: { allowed_countries: ["GB"] },
+    shipping_address_collection: {
+      allowed_countries: SHIPPING_COUNTRIES as unknown as AllowedCountry[],
+    },
     billing_address_collection: "required",
     phone_number_collection: { enabled: true },
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
