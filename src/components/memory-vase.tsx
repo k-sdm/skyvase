@@ -70,9 +70,8 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
   return (
     <div
       style={{
-        position: "relative",
-        width: `min(90vw, calc(70vh * ${SOURCE_WIDTH} / ${SOURCE_HEIGHT}))`,
-        aspectRatio: `${SOURCE_WIDTH} / ${SOURCE_HEIGHT}`,
+        position: "absolute",
+        inset: 0,
         overflow: "hidden",
         background: "#000",
       }}

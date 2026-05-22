@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { MemoryVase, PAIR_COUNT } from "@/components/memory-vase";
+import { PAIR_COUNT } from "@/components/memory-vase";
+import { VaseCarousel } from "@/components/vase-carousel";
 
 const SkyShader = dynamic(
   () => import("@/components/sky-shader").then((m) => m.SkyShader),
@@ -279,7 +280,7 @@ export default function Home() {
       >
         {vaseMode && pairIdx !== null && (
           <>
-            <MemoryVase date={dateForSky} lat={lat} pairIdx={pairIdx} />
+            <VaseCarousel date={dateForSky} lat={lat} pairIdx={pairIdx} />
 
             <p
               style={{
