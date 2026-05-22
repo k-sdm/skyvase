@@ -18,28 +18,26 @@ const VASE_PATHS: readonly string[] = [
   "M405.5 1179.5C405.5 1162.71 407.331 697.755 407.999 467.936C407.999 467.68 408.193 467.48 408.447 467.453C417.346 466.515 425.804 465.575 433.467 465.037C433.755 465.017 434 465.246 434 465.535V470.675C434 470.873 434.097 471.046 434.284 471.11C439.577 472.916 472.229 473.428 476.549 472.645C476.819 472.596 476.844 472.342 476.651 472.146L469.325 464.733C469.016 464.419 469.231 463.887 469.672 463.882C490.921 463.618 515.896 464 555 464C643.75 464 691.049 467.12 696.056 467.469C696.319 467.487 696.498 467.692 696.496 467.955C694.33 701.697 688.421 1175.31 688.002 1190.92C688 1191.02 687.973 1191.04 687.915 1191.12C679.205 1203.09 634.255 1216.5 559.5 1216.5C484.5 1216.5 405.5 1207 405.5 1179.5Z",
 ];
 
-const PAIR_COUNT = VASE_PATHS.length;
+export const PAIR_COUNT = VASE_PATHS.length;
 const GRADIENT_ID = "memory-vase-gradient";
 
 export interface MemoryVaseProps {
   date: Date;
   lat: number;
+  pairIdx: number;
 }
 
-export function MemoryVase({ date, lat }: MemoryVaseProps) {
-  // Pick on the client to avoid SSR/CSR mismatch and so each visit can shuffle.
-  const [pairIdx, setPairIdx] = useState<number | null>(null);
+export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
   const [canPlayWebM, setCanPlayWebM] = useState<boolean | null>(null);
   const stops = buildVaseGradientStops(date, lat);
 
   useEffect(() => {
-    setPairIdx(Math.floor(Math.random() * PAIR_COUNT));
     const v = document.createElement("video");
     setCanPlayWebM(v.canPlayType("video/webm") !== "");
   }, []);
 
-  const oneBased = pairIdx !== null ? pairIdx + 1 : null;
-  const vasePath = pairIdx !== null ? VASE_PATHS[pairIdx] : null;
+  const oneBased = pairIdx + 1;
+  const vasePath = VASE_PATHS[pairIdx];
 
   return (
     <div
@@ -51,7 +49,7 @@ export function MemoryVase({ date, lat }: MemoryVaseProps) {
         background: "#000",
       }}
     >
-      {oneBased !== null && canPlayWebM === true && (
+      {canPlayWebM !== false && (
         <video
           key={oneBased}
           src={`/videos/${oneBased}.webm`}
@@ -72,7 +70,7 @@ export function MemoryVase({ date, lat }: MemoryVaseProps) {
         />
       )}
 
-      {oneBased !== null && canPlayWebM === false && (
+      {canPlayWebM === false && (
         <img
           src={`/videos/${oneBased}.jpg`}
           alt=""
@@ -112,9 +110,7 @@ export function MemoryVase({ date, lat }: MemoryVaseProps) {
             ))}
           </linearGradient>
         </defs>
-        {vasePath !== null && (
-          <path d={vasePath} fill={`url(#${GRADIENT_ID})`} />
-        )}
+        <path d={vasePath} fill={`url(#${GRADIENT_ID})`} />
       </svg>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { MemoryVase } from "@/components/memory-vase";
+import { MemoryVase, PAIR_COUNT } from "@/components/memory-vase";
 
 const SkyShader = dynamic(
   () => import("@/components/sky-shader").then((m) => m.SkyShader),
@@ -139,6 +139,13 @@ export default function Home() {
   const [vaseMode, setVaseMode] = useState(false);
   const [faded, setFaded] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+  // Pick the video/overlay pair on mount so we can preload the WebM before
+  // the user ever clicks through to the vase page.
+  const [pairIdx, setPairIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    setPairIdx(Math.floor(Math.random() * PAIR_COUNT));
+  }, []);
 
   const parsedDate = useMemo(() => parseDateFlexible(dateInput), [dateInput]);
 
@@ -229,6 +236,28 @@ export default function Home() {
     <>
       <SkyShader yShift={yShift} vStretch={vStretch} />
 
+      {/* Hidden preloader so the WebM is already in cache before the user
+          transitions to the vase page. */}
+      {pairIdx !== null && !vaseMode && (
+        <video
+          src={`/videos/${pairIdx + 1}.webm`}
+          preload="auto"
+          muted
+          playsInline
+          aria-hidden
+          tabIndex={-1}
+          style={{
+            position: "fixed",
+            top: -2,
+            left: -2,
+            width: 1,
+            height: 1,
+            opacity: 0,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
       <div
         style={{
           position: "fixed",
@@ -248,48 +277,39 @@ export default function Home() {
           fontFamily: "inherit",
         }}
       >
-        {vaseMode && (
+        {vaseMode && pairIdx !== null && (
           <>
-            <MemoryVase date={dateForSky} lat={lat} />
+            <MemoryVase date={dateForSky} lat={lat} pairIdx={pairIdx} />
 
-            <div
+            <p
               style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "0.25rem",
+                fontSize: "clamp(0.95rem, 3.2vw, 1.05rem)",
+                color: "#18181b",
                 textAlign: "center",
+                maxWidth: "36ch",
+                lineHeight: 1.55,
+                fontWeight: 300,
+                letterSpacing: "0.01em",
               }}
             >
+              your personal titanium vase anodised with the sky of{" "}
               <button
                 type="button"
                 onClick={backToSky}
-                style={memoryLineStyle}
+                style={inlineLinkStyle}
                 aria-label="edit memory"
               >
                 {formatLongDate(dateForSky)}
               </button>
+              {" "}in{" "}
               <button
                 type="button"
                 onClick={backToSky}
-                style={memoryLineStyle}
+                style={inlineLinkStyle}
                 aria-label="edit memory"
               >
-                {placeLabel}
+                {resolved?.name ?? placeLabel}
               </button>
-            </div>
-
-            <p
-              style={{
-                fontSize: "clamp(0.85rem, 2.8vw, 0.95rem)",
-                color: "rgba(0,0,0,0.55)",
-                textAlign: "center",
-                maxWidth: "32ch",
-                lineHeight: 1.4,
-                fontWeight: 300,
-              }}
-            >
-              your vase, titanium anodised with the sky of your memory
             </p>
 
             <button
@@ -343,7 +363,7 @@ export default function Home() {
               fontWeight: 300,
             }}
           >
-            think back to a moment that means a lot to you
+            think back to a moment that meant a lot
           </p>
 
           <input
@@ -476,15 +496,16 @@ export default function Home() {
   );
 }
 
-const memoryLineStyle: React.CSSProperties = {
+const inlineLinkStyle: React.CSSProperties = {
+  display: "inline",
   background: "transparent",
   border: "none",
   padding: 0,
-  color: "#18181b",
-  fontFamily: "inherit",
-  fontSize: "clamp(0.95rem, 3.2vw, 1.05rem)",
-  fontWeight: 300,
-  letterSpacing: "0.01em",
+  margin: 0,
+  font: "inherit",
+  color: "inherit",
   cursor: "pointer",
-  lineHeight: 1.4,
+  textDecoration: "underline",
+  textUnderlineOffset: "3px",
+  lineHeight: "inherit",
 };
