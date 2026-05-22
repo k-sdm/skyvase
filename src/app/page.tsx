@@ -363,7 +363,7 @@ export default function Home() {
               fontWeight: 300,
             }}
           >
-            think back to a moment that meant a lot
+            think back to a moment that means something to you
           </p>
 
           <input
