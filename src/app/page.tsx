@@ -260,9 +260,8 @@ export default function Home() {
       )}
 
       <div
+        className="viewport-fill"
         style={{
-          position: "fixed",
-          inset: 0,
           background: "#ffffff",
           zIndex: 2,
           opacity: faded ? 1 : 0,
@@ -293,7 +292,6 @@ export default function Home() {
                 letterSpacing: "0.01em",
               }}
             >
-              your personal titanium vase anodised with the sky of{" "}
               <button
                 type="button"
                 onClick={backToSky}
@@ -302,7 +300,7 @@ export default function Home() {
               >
                 {formatLongDate(dateForSky)}
               </button>
-              {" "}in{" "}
+              {", "}
               <button
                 type="button"
                 onClick={backToSky}
@@ -341,9 +339,8 @@ export default function Home() {
 
       {!vaseMode && (
         <main
+          className="viewport-fill"
           style={{
-            position: "fixed",
-            inset: 0,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -462,21 +459,7 @@ export default function Home() {
       )}
 
       {!vaseMode && (
-        <footer
-          style={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            padding: "clamp(0.6rem, 2vw, 0.9rem)",
-            fontFamily: "inherit",
-            fontSize: "clamp(0.65rem, 2vw, 0.75rem)",
-            color: "rgba(255,255,255,0.55)",
-            pointerEvents: "none",
-            letterSpacing: "0.02em",
-          }}
-        >
+        <footer className="site-footer">
           A project by{" "}
           <a
             href="https://www.instagram.com/kiran.sdm/"

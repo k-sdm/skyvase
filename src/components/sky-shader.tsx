@@ -219,7 +219,7 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 h-screen w-screen"
+      className="viewport-fill"
     />
   );
 }

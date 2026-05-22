@@ -3,9 +3,8 @@ import Link from "next/link";
 export default function SuccessPage() {
   return (
     <div
+      className="viewport-fill"
       style={{
-        position: "fixed",
-        inset: 0,
         background: "#ffffff",
         display: "flex",
         flexDirection: "column",

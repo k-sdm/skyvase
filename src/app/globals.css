@@ -6,11 +6,60 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100%;
+  background: #000;
+}
+
+html,
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+}
+
 body {
   overflow: hidden;
   background: #000;
   font-family: var(--font-kh-teka), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Full-screen layers: use dynamic viewport height so iOS Safari fills
+   the visible area when the bottom URL bar is shown (100vh is too tall). */
+.viewport-fill {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+}
+
+.site-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
+  text-align: center;
+  padding: clamp(0.6rem, 2vw, 0.9rem);
+  font-family: inherit;
+  font-size: clamp(0.65rem, 2vw, 0.75rem);
+  color: rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+  letter-spacing: 0.02em;
+}
+
+/* Extra lift on phones so the credit line sits above Safari’s bottom bar. */
+@media (hover: none) and (pointer: coarse) {
+  .site-footer {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 2.75rem);
+  }
 }
 
 input.memory-field {
