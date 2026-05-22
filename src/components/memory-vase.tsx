@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { buildVaseGradientStops } from "@/components/vase-preview";
 
 // Native dimensions of every video + matching overlay.
@@ -13,24 +13,42 @@ const SOURCE_HEIGHT = 1350;
 const VASE_TOP_Y = 466;
 const VASE_BOTTOM_Y = 1214;
 const VASE_HALF_WIDTH = 150;
-
-// Focus point sits above the vase so the *bottom* arcs of the gradient
-// rings show through the silhouette — gives a subtle smile-shape
-// (valley in the middle, lifting at the edges) that reads as cylinder
-// curvature. Lower FOCUS_Y closer to VASE_TOP_Y for a more exaggerated
-// bend; push it more negative for almost-flat bands.
 const FOCUS_X = SOURCE_WIDTH / 2;
-const FOCUS_Y = -1500;
-const TOP_DIST = VASE_TOP_Y - FOCUS_Y;
-const BOTTOM_DIST = VASE_BOTTOM_Y - FOCUS_Y;
-const CURVE_RADIUS = Math.sqrt(
-  VASE_HALF_WIDTH * VASE_HALF_WIDTH + BOTTOM_DIST * BOTTOM_DIST
-);
-const RADIAL_START = TOP_DIST / CURVE_RADIUS;
-const RADIAL_END = BOTTOM_DIST / CURVE_RADIUS;
 
-function mapToRadialOffset(linearOffset: number): number {
-  return RADIAL_START + linearOffset * (RADIAL_END - RADIAL_START);
+// Default focus point sits above the vase so the *bottom* arcs of the
+// gradient rings show through the silhouette — gives a subtle
+// smile-shape (valley in the middle, lifting at the edges) that reads
+// as cylinder curvature.
+//
+// At runtime this can be tweaked from the browser console via
+//   __setVaseFocusY(-500)
+// — try smaller (closer to 0 or positive) for more bend, more negative
+// for nearly-flat bands. See window.__setVaseFocusY below.
+const DEFAULT_FOCUS_Y = -1500;
+
+interface CurveGeometry {
+  cy: number;
+  radius: number;
+  start: number;
+  end: number;
+}
+
+function computeCurveGeometry(focusY: number): CurveGeometry {
+  const topDist = VASE_TOP_Y - focusY;
+  const bottomDist = VASE_BOTTOM_Y - focusY;
+  // Radius needs to cover the furthest vase pixel from the focal point
+  // (top-edge corner if focusY is below the vase, bottom-edge corner
+  //  if focusY is above). Take the max so stop offsets stay <= 1.
+  const radius = Math.sqrt(
+    VASE_HALF_WIDTH * VASE_HALF_WIDTH +
+      Math.max(Math.abs(topDist), Math.abs(bottomDist)) ** 2
+  );
+  return {
+    cy: focusY,
+    radius,
+    start: topDist / radius,
+    end: bottomDist / radius,
+  };
 }
 
 // Vase silhouettes extracted from public/OVERLAY 1-3.svg.
@@ -53,14 +71,41 @@ export interface MemoryVaseProps {
   pairIdx: number;
 }
 
+declare global {
+  interface Window {
+    __setVaseFocusY?: (value: number) => void;
+    __getVaseFocusY?: () => number;
+  }
+}
+
 export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
   const [canPlayWebM, setCanPlayWebM] = useState<boolean | null>(null);
+  const [focusY, setFocusY] = useState<number>(DEFAULT_FOCUS_Y);
   const stops = buildVaseGradientStops(date, lat);
+  const geom = useMemo(() => computeCurveGeometry(focusY), [focusY]);
 
   useEffect(() => {
     const v = document.createElement("video");
     setCanPlayWebM(v.canPlayType("video/webm") !== "");
   }, []);
+
+  // Dev hook: tweak the gradient focal point live from the browser
+  // console. `__setVaseFocusY(-500)` re-renders instantly.
+  useEffect(() => {
+    window.__setVaseFocusY = (value: number) => {
+      if (typeof value !== "number" || Number.isNaN(value)) {
+        console.warn("[vase] focusY must be a finite number");
+        return;
+      }
+      setFocusY(value);
+      console.info(`[vase] focusY = ${value}`);
+    };
+    window.__getVaseFocusY = () => focusY;
+    return () => {
+      delete window.__setVaseFocusY;
+      delete window.__getVaseFocusY;
+    };
+  }, [focusY]);
 
   const oneBased = pairIdx + 1;
   const vasePath = VASE_PATHS[pairIdx];
@@ -129,19 +174,22 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
           <radialGradient
             id={GRADIENT_ID}
             cx={FOCUS_X}
-            cy={FOCUS_Y}
-            r={CURVE_RADIUS}
+            cy={geom.cy}
+            r={geom.radius}
             fx={FOCUS_X}
-            fy={FOCUS_Y}
+            fy={geom.cy}
             gradientUnits="userSpaceOnUse"
           >
-            {stops.map((s, i) => (
-              <stop
-                key={i}
-                offset={`${(mapToRadialOffset(s.offset) * 100).toFixed(3)}%`}
-                stopColor={s.color}
-              />
-            ))}
+            {stops.map((s, i) => {
+              const offset = geom.start + s.offset * (geom.end - geom.start);
+              return (
+                <stop
+                  key={i}
+                  offset={`${(offset * 100).toFixed(3)}%`}
+                  stopColor={s.color}
+                />
+              );
+            })}
           </radialGradient>
         </defs>
         <path d={vasePath} fill={`url(#${GRADIENT_ID})`} />
