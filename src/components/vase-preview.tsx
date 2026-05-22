@@ -11,7 +11,7 @@ const COLOUR_MAP: ColourStop[] = [
   { voltage: 37, hex: "#80B9D6" },
   { voltage: 47, hex: "#B6B6B6" },
   { voltage: 50, hex: "#DACC88" },
-  { voltage: 54, hex: "#E69857" },
+  { voltage: 58, hex: "#E69857" },
   { voltage: 64, hex: "#DF5675" },
 ];
 
