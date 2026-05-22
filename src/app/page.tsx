@@ -238,7 +238,7 @@ export default function Home() {
               fontWeight: 300,
             }}
           >
-            think back to a memory in your life that means a lot to you
+            think back to a moment that means a lot to you
           </p>
 
           <input
@@ -278,7 +278,7 @@ export default function Home() {
             onClick={goToVase}
             disabled={!ready}
             aria-hidden={!ready}
-            aria-label="see your vase"
+            aria-label="embed memory"
             style={{
               pointerEvents: ready ? "auto" : "none",
               opacity: ready ? 1 : 0,
@@ -299,7 +299,7 @@ export default function Home() {
               aria-hidden="true"
             >
               <defs>
-                <mask id="see-your-vase-cutout">
+                <mask id="embed-memory-cutout">
                   <rect width="220" height="56" fill="#fff" />
                   <text
                     x="110"
@@ -314,7 +314,7 @@ export default function Home() {
                       letterSpacing: "0.01em",
                     }}
                   >
-                    see your vase
+                    embed memory
                   </text>
                 </mask>
               </defs>
@@ -324,7 +324,7 @@ export default function Home() {
                 rx="28"
                 ry="28"
                 fill="#fff"
-                mask="url(#see-your-vase-cutout)"
+                mask="url(#embed-memory-cutout)"
               />
             </svg>
           </button>
