@@ -5,8 +5,8 @@ export const PRODUCT = {
     "A 200mm titanium vase with a colour gradient uniquely encoding a date and location. " +
     "The gradient maps daylight hours to anodisation zones — shorter days produce deeper blues, " +
     "longer days reveal golds and teals. Each piece is one-of-one.",
-  priceAmount: 34500,
-  currency: "gbp",
+  priceAmount: 30000,
+  currency: "usd",
   dimensions: "200mm × 80mm",
   material: "Grade 2 Titanium",
   process: "Electrochemical anodisation",
@@ -22,7 +22,7 @@ export const VOLTAGE_COLOURS = [
 ] as const;
 
 export function formatPrice(amount: number, currency: string): string {
-  return new Intl.NumberFormat("en-GB", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
   }).format(amount / 100);
