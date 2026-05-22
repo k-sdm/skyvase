@@ -13,11 +13,6 @@ export const metadata: Metadata = {
   title: "sky vase",
   description:
     "Custom anodised titanium vases encoding a date and location into a unique colour gradient.",
-  icons: {
-    icon: [{ url: "/favicon.png", type: "image/png" }],
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
-  },
 };
 
 export const viewport: Viewport = {
