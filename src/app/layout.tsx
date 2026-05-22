@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const khTeka = localFont({
+  src: "../fonts/KHTeka-Light.otf",
+  variable: "--font-kh-teka",
+  display: "swap",
+  weight: "300",
 });
 
 export const metadata: Metadata = {
@@ -24,10 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-    >
+    <html lang="en" className={`${khTeka.variable} antialiased`}>
       <body className="m-0 overflow-hidden bg-black">{children}</body>
     </html>
   );

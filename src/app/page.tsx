@@ -40,12 +40,80 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-function toISODate(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
 function formatLongDate(d: Date): string {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}
+
+const MONTH_NAMES = [
+  "january", "february", "march", "april", "may", "june",
+  "july", "august", "september", "october", "november", "december",
+];
+
+function monthFromName(s: string): number | null {
+  const lower = s.toLowerCase().replace(/\.$/, "");
+  if (lower.length < 3) return null;
+  for (let i = 0; i < 12; i++) {
+    if (MONTH_NAMES[i].startsWith(lower)) return i;
+  }
+  return null;
+}
+
+function isValidYMD(d: Date, y: number, m: number, day: number): boolean {
+  return d.getFullYear() === y && d.getMonth() === m && d.getDate() === day;
+}
+
+// Parse a wide variety of UK-leaning date formats.
+// Returns null when the input cannot confidently be turned into a date.
+function parseDateFlexible(input: string): Date | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  let m = trimmed.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/);
+  if (m) {
+    const y = +m[1], mo = +m[2] - 1, d = +m[3];
+    const date = new Date(y, mo, d);
+    if (isValidYMD(date, y, mo, d)) return date;
+  }
+
+  m = trimmed.match(/^(\d{1,2})[-./](\d{1,2})[-./](\d{2,4})$/);
+  if (m) {
+    const d = +m[1], mo = +m[2] - 1;
+    let y = +m[3];
+    if (y < 100) y += y >= 70 ? 1900 : 2000;
+    const date = new Date(y, mo, d);
+    if (isValidYMD(date, y, mo, d)) return date;
+  }
+
+  const tokens = trimmed.split(/[\s,]+/).filter(Boolean);
+  let day: number | null = null;
+  let month: number | null = null;
+  let year: number | null = null;
+
+  for (const tok of tokens) {
+    const monIdx = monthFromName(tok);
+    if (monIdx !== null && month === null) {
+      month = monIdx;
+      continue;
+    }
+    const stripped = tok.replace(/(st|nd|rd|th)$/i, "");
+    const n = parseInt(stripped, 10);
+    if (isNaN(n)) continue;
+    if (n >= 1900 && n <= 2100 && year === null) {
+      year = n;
+    } else if (n >= 1 && n <= 31 && day === null) {
+      day = n;
+    } else if (year === null) {
+      year = n < 100 ? (n >= 70 ? 1900 + n : 2000 + n) : n;
+    }
+  }
+
+  if (month !== null && day !== null) {
+    const y = year ?? new Date().getFullYear();
+    const date = new Date(y, month, day);
+    if (isValidYMD(date, y, month, day)) return date;
+  }
+
+  return null;
 }
 
 interface GeocodingResult {
@@ -56,61 +124,63 @@ interface GeocodingResult {
   admin1?: string;
 }
 
-async function geocodeLocation(query: string): Promise<GeocodingResult | null> {
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (!data.results || data.results.length === 0) return null;
-  const r = data.results[0];
-  return {
-    latitude: r.latitude,
-    longitude: r.longitude,
-    name: r.name,
-    country: r.country,
-    admin1: r.admin1,
-  };
-}
-
 export default function Home() {
-  const [dateStr, setDateStr] = useState(() => toISODate(new Date()));
-  const [locationInput, setLocationInput] = useState("");
+  const [dateInput, setDateInput] = useState("");
+  const [placeInput, setPlaceInput] = useState("");
   const [resolved, setResolved] = useState<GeocodingResult | null>(null);
   const [vaseMode, setVaseMode] = useState(false);
   const [faded, setFaded] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const date = useMemo(() => new Date(dateStr + "T12:00:00"), [dateStr]);
+  const parsedDate = useMemo(() => parseDateFlexible(dateInput), [dateInput]);
+
+  useEffect(() => {
+    const query = placeInput.trim();
+    if (!query) {
+      setResolved(null);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          const r = data.results[0];
+          setResolved({
+            latitude: r.latitude,
+            longitude: r.longitude,
+            name: r.name,
+            country: r.country,
+            admin1: r.admin1,
+          });
+        } else {
+          setResolved(null);
+        }
+      } catch {
+        // request aborted or network error; ignore
+      }
+    }, 400);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [placeInput]);
+
+  const dateForSky = parsedDate ?? new Date();
   const lat = resolved?.latitude ?? DEFAULT_LAT;
 
-  const t = dateToT(date, lat);
+  const t = dateToT(dateForSky, lat);
   const yShift = lerp(WINTER.shift, SUMMER.shift, t);
   const vStretch = lerp(WINTER.stretch, SUMMER.stretch, t);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const trimmed = locationInput.trim();
-    if (!trimmed) {
-      setError("Enter a place name.");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await geocodeLocation(trimmed);
-      if (!result) {
-        setError("Couldn't find that place. Try a city or town name.");
-        return;
-      }
-      setResolved(result);
-      setFaded(true);
-      setTimeout(() => setVaseMode(true), 400);
-    } catch {
-      setError("Something went wrong looking up that location.");
-    } finally {
-      setLoading(false);
-    }
+  const ready = parsedDate !== null && resolved !== null;
+
+  function goToVase() {
+    if (!ready) return;
+    setFaded(true);
+    setTimeout(() => setVaseMode(true), 400);
   }
 
   function backToSky() {
@@ -140,86 +210,98 @@ export default function Home() {
           justifyContent: "center",
         }}
       >
-        {vaseMode && <VasePreview date={date} lat={lat} />}
+        {vaseMode && <VasePreview date={dateForSky} lat={lat} />}
       </div>
 
-      {!vaseMode ? (
-        <form
-          onSubmit={handleSubmit}
+      {!vaseMode && (
+        <main
           style={{
             position: "fixed",
-            bottom: "2rem",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 10,
+            inset: 0,
+            zIndex: 5,
             display: "flex",
             flexDirection: "column",
-            gap: "0.75rem",
-            background: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(12px)",
-            borderRadius: "12px",
-            padding: "1.1rem 1.5rem",
-            fontFamily: "system-ui, sans-serif",
-            color: "#e4e4e7",
-            fontSize: "0.82rem",
-            width: "min(440px, calc(100vw - 2rem))",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "2.5rem",
+            padding: "2rem",
+            pointerEvents: "none",
+            color: "#ffffff",
           }}
         >
           <p
             style={{
-              margin: 0,
-              fontSize: "0.85rem",
-              lineHeight: 1.45,
-              color: "#e4e4e7",
+              fontSize: "1.6rem",
+              lineHeight: 1.35,
+              textAlign: "center",
+              maxWidth: "32ch",
+              letterSpacing: "0.01em",
+              fontWeight: 300,
             }}
           >
-            Think of a memory important to you, and enter the day and place
-            where it happened.
+            think back to a memory in your life that&apos;s important to you
           </p>
 
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <input
-              type="date"
-              value={dateStr}
-              onChange={(e) => setDateStr(e.target.value)}
-              required
-              style={inputStyle}
-            />
-            <input
-              type="text"
-              value={locationInput}
-              onChange={(e) => setLocationInput(e.target.value)}
-              placeholder="e.g. London"
-              required
-              style={{ ...inputStyle, flex: 1, minWidth: 140 }}
-            />
-          </div>
+          <input
+            className="memory-field"
+            type="text"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="enter the day when it happened"
+            value={dateInput}
+            onChange={(e) => setDateInput(e.target.value)}
+            style={{
+              pointerEvents: "auto",
+              fontSize: "1.6rem",
+              fontWeight: 300,
+              maxWidth: "32ch",
+            }}
+          />
 
-          {error && (
-            <span style={{ fontSize: "0.72rem", color: "#fca5a5" }}>{error}</span>
-          )}
+          <input
+            className="memory-field"
+            type="text"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="and where in the world it happened"
+            value={placeInput}
+            onChange={(e) => setPlaceInput(e.target.value)}
+            style={{
+              pointerEvents: "auto",
+              fontSize: "1.6rem",
+              fontWeight: 300,
+              maxWidth: "32ch",
+            }}
+          />
 
           <button
-            type="submit"
-            disabled={loading}
+            type="button"
+            onClick={goToVase}
+            disabled={!ready}
+            aria-hidden={!ready}
             style={{
-              background: loading ? "rgba(167,139,250,0.5)" : "#a78bfa",
-              border: "1px solid rgba(255,255,255,0.15)",
-              color: "#0e0e10",
-              borderRadius: "6px",
-              padding: "0.55rem 0.75rem",
-              fontFamily: "system-ui, sans-serif",
-              fontSize: "0.72rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              cursor: loading ? "default" : "pointer",
-              transition: "all 0.2s",
+              pointerEvents: ready ? "auto" : "none",
+              opacity: ready ? 1 : 0,
+              transform: ready ? "translateY(0)" : "translateY(8px)",
+              transition: "opacity 0.5s ease, transform 0.5s ease",
+              background: "#ffffff",
+              color: "#000000",
+              border: "none",
+              borderRadius: "9999px",
+              padding: "0.8rem 2.2rem",
+              fontFamily: "inherit",
+              fontSize: "1.2rem",
+              fontWeight: 300,
+              cursor: ready ? "pointer" : "default",
+              mixBlendMode: "screen",
             }}
           >
-            {loading ? "Finding place\u2026" : "See your vase"}
+            see your vase
           </button>
-        </form>
-      ) : (
+        </main>
+      )}
+
+      {vaseMode && (
         <div
           style={{
             position: "fixed",
@@ -230,53 +312,34 @@ export default function Home() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: "0.6rem",
-            background: "rgba(0,0,0,0.04)",
-            backdropFilter: "blur(8px)",
-            borderRadius: "12px",
-            padding: "0.75rem 1.25rem",
-            fontFamily: "system-ui, sans-serif",
+            gap: "0.5rem",
+            fontFamily: "inherit",
             color: "#18181b",
-            fontSize: "0.82rem",
             textAlign: "center",
           }}
         >
-          <div style={{ lineHeight: 1.4 }}>
-            <div style={{ fontWeight: 500 }}>{formatLongDate(date)}</div>
-            <div style={{ color: "#71717a", fontSize: "0.74rem" }}>{placeLabel}</div>
+          <div style={{ fontSize: "1rem", lineHeight: 1.3 }}>
+            {formatLongDate(dateForSky)}
           </div>
+          <div style={{ fontSize: "0.85rem", color: "#71717a" }}>{placeLabel}</div>
           <button
             onClick={backToSky}
             style={{
+              marginTop: "0.5rem",
               background: "transparent",
-              border: "1px solid rgba(0,0,0,0.15)",
-              color: "#18181b",
-              borderRadius: "6px",
-              padding: "0.4rem 0.85rem",
-              fontFamily: "system-ui, sans-serif",
-              fontSize: "0.68rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
+              border: "none",
+              color: "#71717a",
+              fontFamily: "inherit",
+              fontSize: "0.85rem",
               cursor: "pointer",
-              transition: "all 0.2s",
+              textDecoration: "underline",
+              textUnderlineOffset: "3px",
             }}
           >
-            Edit memory
+            edit memory
           </button>
         </div>
       )}
     </>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.18)",
-  color: "#e4e4e7",
-  borderRadius: "6px",
-  padding: "0.45rem 0.65rem",
-  fontFamily: "system-ui, sans-serif",
-  fontSize: "0.78rem",
-  outline: "none",
-  colorScheme: "dark",
-};

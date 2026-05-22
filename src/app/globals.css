@@ -3,9 +3,31 @@
 * {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
 body {
   overflow: hidden;
   background: #000;
+  font-family: var(--font-kh-teka), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+input.memory-field {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-family: inherit;
+  text-align: center;
+  width: 100%;
+}
+
+input.memory-field::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+  font-family: inherit;
+}
+
+input.memory-field:focus {
+  outline: none;
 }
