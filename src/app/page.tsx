@@ -124,12 +124,21 @@ interface GeocodingResult {
   admin1?: string;
 }
 
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function formatDDMMYYYY(d: Date): string {
+  return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
+}
+
 export default function Home() {
   const [dateInput, setDateInput] = useState("");
   const [placeInput, setPlaceInput] = useState("");
   const [resolved, setResolved] = useState<GeocodingResult | null>(null);
   const [vaseMode, setVaseMode] = useState(false);
   const [faded, setFaded] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
 
   const parsedDate = useMemo(() => parseDateFlexible(dateInput), [dateInput]);
 
@@ -192,6 +201,30 @@ export default function Home() {
     ? [resolved.name, resolved.admin1, resolved.country].filter(Boolean).join(", ")
     : "";
 
+  async function handlePurchase() {
+    if (!parsedDate || !resolved || purchasing) return;
+    setPurchasing(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: formatDDMMYYYY(parsedDate),
+          location: `${resolved.longitude}, ${resolved.latitude}`,
+          placeName: placeLabel,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setPurchasing(false);
+    } catch {
+      setPurchasing(false);
+    }
+  }
+
   return (
     <>
       <SkyShader yShift={yShift} vStretch={vStretch} />
@@ -206,11 +239,83 @@ export default function Home() {
           pointerEvents: faded ? "auto" : "none",
           transition: "opacity 0.4s ease",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          gap: "clamp(1.25rem, 4vw, 2rem)",
+          padding: "clamp(1rem, 5vw, 2rem)",
+          color: "#18181b",
+          fontFamily: "inherit",
         }}
       >
-        {vaseMode && <VasePreview date={dateForSky} lat={lat} />}
+        {vaseMode && (
+          <>
+            <VasePreview date={dateForSky} lat={lat} />
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "0.25rem",
+                textAlign: "center",
+              }}
+            >
+              <button
+                type="button"
+                onClick={backToSky}
+                style={memoryLineStyle}
+                aria-label="edit memory"
+              >
+                {formatLongDate(dateForSky)}
+              </button>
+              <button
+                type="button"
+                onClick={backToSky}
+                style={memoryLineStyle}
+                aria-label="edit memory"
+              >
+                {placeLabel}
+              </button>
+            </div>
+
+            <p
+              style={{
+                fontSize: "clamp(0.85rem, 2.8vw, 0.95rem)",
+                color: "rgba(0,0,0,0.55)",
+                textAlign: "center",
+                maxWidth: "32ch",
+                lineHeight: 1.4,
+                fontWeight: 300,
+              }}
+            >
+              your vase, titanium anodised with the sky of your memory
+            </p>
+
+            <button
+              type="button"
+              onClick={handlePurchase}
+              disabled={purchasing}
+              style={{
+                background: "#000",
+                color: "#fff",
+                border: "none",
+                borderRadius: "9999px",
+                padding: "0.95rem 2rem",
+                fontFamily: "inherit",
+                fontSize: "clamp(0.95rem, 3.2vw, 1.05rem)",
+                fontWeight: 300,
+                letterSpacing: "0.01em",
+                cursor: purchasing ? "default" : "pointer",
+                opacity: purchasing ? 0.6 : 1,
+                width: "clamp(180px, 55vw, 220px)",
+                transition: "opacity 0.2s ease",
+              }}
+            >
+              {purchasing ? "redirecting\u2026" : "purchase"}
+            </button>
+          </>
+        )}
       </div>
 
       {!vaseMode && (
@@ -335,59 +440,51 @@ export default function Home() {
         </main>
       )}
 
-      {vaseMode && (
-        <div
+      {!vaseMode && (
+        <footer
           style={{
             position: "fixed",
-            bottom: "clamp(1.25rem, 5vw, 2rem)",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 10,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "0.5rem",
-            fontFamily: "inherit",
-            color: "#18181b",
+            bottom: 0,
+            left: 0,
+            right: 0,
             textAlign: "center",
-            maxWidth: "calc(100vw - 2rem)",
-            padding: "0 1rem",
+            padding: "clamp(0.6rem, 2vw, 0.9rem)",
+            fontFamily: "inherit",
+            fontSize: "clamp(0.65rem, 2vw, 0.75rem)",
+            color: "rgba(255,255,255,0.55)",
+            pointerEvents: "none",
+            letterSpacing: "0.02em",
           }}
         >
-          <div
+          A project by{" "}
+          <a
+            href="https://www.instagram.com/kiran.sdm/"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
-              fontSize: "clamp(0.95rem, 3.2vw, 1.05rem)",
-              lineHeight: 1.3,
-            }}
-          >
-            {formatLongDate(dateForSky)}
-          </div>
-          <div
-            style={{
-              fontSize: "clamp(0.8rem, 2.8vw, 0.9rem)",
-              color: "#71717a",
-            }}
-          >
-            {placeLabel}
-          </div>
-          <button
-            onClick={backToSky}
-            style={{
-              marginTop: "0.5rem",
-              background: "transparent",
-              border: "none",
-              color: "#71717a",
-              fontFamily: "inherit",
-              fontSize: "clamp(0.8rem, 2.8vw, 0.9rem)",
-              cursor: "pointer",
+              color: "inherit",
               textDecoration: "underline",
               textUnderlineOffset: "3px",
+              pointerEvents: "auto",
             }}
           >
-            edit memory
-          </button>
-        </div>
+            Kiran Scott de Martinville
+          </a>
+        </footer>
       )}
     </>
   );
 }
+
+const memoryLineStyle: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  padding: 0,
+  color: "#18181b",
+  fontFamily: "inherit",
+  fontSize: "clamp(0.95rem, 3.2vw, 1.05rem)",
+  fontWeight: 300,
+  letterSpacing: "0.01em",
+  cursor: "pointer",
+  lineHeight: 1.4,
+};
