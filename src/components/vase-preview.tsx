@@ -84,6 +84,11 @@ function buildGradientCSS(zones: { zone1: number; zone2: number; zone3: number }
   return `linear-gradient(to bottom, ${stops.join(", ")})`;
 }
 
+export function buildVaseGradient(date: Date, lat: number): string {
+  const zones = computeZones(date, lat);
+  return buildGradientCSS(zones);
+}
+
 export interface VasePreviewProps {
   date: Date;
   lat: number;

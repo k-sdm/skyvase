@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { VasePreview } from "@/components/vase-preview";
+import { MemoryVase } from "@/components/memory-vase";
 
 const SkyShader = dynamic(
   () => import("@/components/sky-shader").then((m) => m.SkyShader),
@@ -250,7 +250,7 @@ export default function Home() {
       >
         {vaseMode && (
           <>
-            <VasePreview date={dateForSky} lat={lat} />
+            <MemoryVase date={dateForSky} lat={lat} />
 
             <div
               style={{
