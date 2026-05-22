@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -13,6 +13,12 @@ export const metadata: Metadata = {
   title: "SkyVase",
   description:
     "Custom anodised titanium vases encoding a date and location into a unique colour gradient.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({

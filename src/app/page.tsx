@@ -222,18 +222,18 @@ export default function Home() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: "2.5rem",
-            padding: "2rem",
+            gap: "clamp(1.5rem, 5vw, 2.5rem)",
+            padding: "clamp(1rem, 5vw, 2rem)",
             pointerEvents: "none",
             color: "#ffffff",
           }}
         >
           <p
             style={{
-              fontSize: "1.6rem",
+              fontSize: "clamp(1.15rem, 4.5vw, 1.6rem)",
               lineHeight: 1.35,
               textAlign: "center",
-              maxWidth: "32ch",
+              maxWidth: "28ch",
               letterSpacing: "0.01em",
               fontWeight: 300,
             }}
@@ -251,9 +251,9 @@ export default function Home() {
             onChange={(e) => setDateInput(e.target.value)}
             style={{
               pointerEvents: "auto",
-              fontSize: "1.6rem",
+              fontSize: "clamp(1.15rem, 4.5vw, 1.6rem)",
               fontWeight: 300,
-              maxWidth: "32ch",
+              maxWidth: "28ch",
             }}
           />
 
@@ -267,9 +267,9 @@ export default function Home() {
             onChange={(e) => setPlaceInput(e.target.value)}
             style={{
               pointerEvents: "auto",
-              fontSize: "1.6rem",
+              fontSize: "clamp(1.15rem, 4.5vw, 1.6rem)",
               fontWeight: 300,
-              maxWidth: "32ch",
+              maxWidth: "28ch",
             }}
           />
 
@@ -292,11 +292,15 @@ export default function Home() {
             }}
           >
             <svg
-              width="220"
-              height="56"
               viewBox="0 0 220 56"
+              preserveAspectRatio="xMidYMid meet"
               role="presentation"
               aria-hidden="true"
+              style={{
+                width: "clamp(180px, 55vw, 220px)",
+                height: "auto",
+                display: "block",
+              }}
             >
               <defs>
                 <mask id="embed-memory-cutout">
@@ -335,7 +339,7 @@ export default function Home() {
         <div
           style={{
             position: "fixed",
-            bottom: "2rem",
+            bottom: "clamp(1.25rem, 5vw, 2rem)",
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 10,
@@ -346,12 +350,26 @@ export default function Home() {
             fontFamily: "inherit",
             color: "#18181b",
             textAlign: "center",
+            maxWidth: "calc(100vw - 2rem)",
+            padding: "0 1rem",
           }}
         >
-          <div style={{ fontSize: "1rem", lineHeight: 1.3 }}>
+          <div
+            style={{
+              fontSize: "clamp(0.95rem, 3.2vw, 1.05rem)",
+              lineHeight: 1.3,
+            }}
+          >
             {formatLongDate(dateForSky)}
           </div>
-          <div style={{ fontSize: "0.85rem", color: "#71717a" }}>{placeLabel}</div>
+          <div
+            style={{
+              fontSize: "clamp(0.8rem, 2.8vw, 0.9rem)",
+              color: "#71717a",
+            }}
+          >
+            {placeLabel}
+          </div>
           <button
             onClick={backToSky}
             style={{
@@ -360,7 +378,7 @@ export default function Home() {
               border: "none",
               color: "#71717a",
               fontFamily: "inherit",
-              fontSize: "0.85rem",
+              fontSize: "clamp(0.8rem, 2.8vw, 0.9rem)",
               cursor: "pointer",
               textDecoration: "underline",
               textUnderlineOffset: "3px",
