@@ -7,6 +7,30 @@ import { buildVaseGradientStops } from "@/components/vase-preview";
 const SOURCE_WIDTH = 1080;
 const SOURCE_HEIGHT = 1350;
 
+// Approximate vase silhouette extent within the 1080x1350 viewBox.
+// Used to compute radial gradient placement so colour bands bend with
+// the cylinder rather than running straight horizontally.
+const VASE_TOP_Y = 466;
+const VASE_BOTTOM_Y = 1214;
+const VASE_HALF_WIDTH = 150;
+
+// Focus point sits above the vase so the visible bottom arcs of the
+// gradient rings produce a smile-shaped curve (valley in the middle).
+// Move FOCUS_Y closer to VASE_TOP_Y to exaggerate the curvature.
+const FOCUS_X = SOURCE_WIDTH / 2;
+const FOCUS_Y = -1500;
+const TOP_DIST = VASE_TOP_Y - FOCUS_Y;
+const BOTTOM_DIST = VASE_BOTTOM_Y - FOCUS_Y;
+const CURVE_RADIUS = Math.sqrt(
+  VASE_HALF_WIDTH * VASE_HALF_WIDTH + BOTTOM_DIST * BOTTOM_DIST
+);
+const RADIAL_START = TOP_DIST / CURVE_RADIUS;
+const RADIAL_END = BOTTOM_DIST / CURVE_RADIUS;
+
+function mapToRadialOffset(linearOffset: number): number {
+  return RADIAL_START + linearOffset * (RADIAL_END - RADIAL_START);
+}
+
 // Vase silhouettes extracted from public/OVERLAY 1-3.svg.
 // Each path is hand-aligned to its matching video frame.
 const VASE_PATHS: readonly string[] = [
@@ -100,15 +124,23 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
         aria-hidden
       >
         <defs>
-          <linearGradient id={GRADIENT_ID} x1="0" y1="0" x2="0" y2="1">
+          <radialGradient
+            id={GRADIENT_ID}
+            cx={FOCUS_X}
+            cy={FOCUS_Y}
+            r={CURVE_RADIUS}
+            fx={FOCUS_X}
+            fy={FOCUS_Y}
+            gradientUnits="userSpaceOnUse"
+          >
             {stops.map((s, i) => (
               <stop
                 key={i}
-                offset={`${(s.offset * 100).toFixed(2)}%`}
+                offset={`${(mapToRadialOffset(s.offset) * 100).toFixed(3)}%`}
                 stopColor={s.color}
               />
             ))}
-          </linearGradient>
+          </radialGradient>
         </defs>
         <path d={vasePath} fill={`url(#${GRADIENT_ID})`} />
       </svg>
