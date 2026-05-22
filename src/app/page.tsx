@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { VasePreview, DEFAULT_COLOUR_MAP, type ColourStop } from "@/components/vase-preview";
+import { VasePreview } from "@/components/vase-preview";
 
 const SkyShader = dynamic(
   () => import("@/components/sky-shader").then((m) => m.SkyShader),
@@ -12,7 +12,7 @@ const SkyShader = dynamic(
 const WINTER = { shift: 0.78, stretch: 0.25 };
 const SUMMER = { shift: 0.10, stretch: 1.00 };
 
-const DEFAULT_LAT = 51.77;
+const DEFAULT_LAT = 51.5;
 
 function daylightHours(date: Date, lat: number): number {
   const doy = Math.floor(
@@ -40,65 +40,87 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-function formatDate(d: Date): string {
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+function toISODate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function formatLongDate(d: Date): string {
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}
+
+interface GeocodingResult {
+  latitude: number;
+  longitude: number;
+  name: string;
+  country?: string;
+  admin1?: string;
+}
+
+async function geocodeLocation(query: string): Promise<GeocodingResult | null> {
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (!data.results || data.results.length === 0) return null;
+  const r = data.results[0];
+  return {
+    latitude: r.latitude,
+    longitude: r.longitude,
+    name: r.name,
+    country: r.country,
+    admin1: r.admin1,
+  };
 }
 
 export default function Home() {
-  const [dayOfYear, setDayOfYear] = useState(() => {
-    const now = new Date();
-    return Math.floor(
-      (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000
-    );
-  });
-  const [lat, setLat] = useState(DEFAULT_LAT);
+  const [dateStr, setDateStr] = useState(() => toISODate(new Date()));
+  const [locationInput, setLocationInput] = useState("");
+  const [resolved, setResolved] = useState<GeocodingResult | null>(null);
   const [vaseMode, setVaseMode] = useState(false);
   const [faded, setFaded] = useState(false);
-  const [colourMap, setColourMap] = useState<ColourStop[]>(() =>
-    DEFAULT_COLOUR_MAP.map((s) => ({ ...s }))
-  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function updateColour(idx: number, hex: string) {
-    setColourMap((prev) => prev.map((s, i) => (i === idx ? { ...s, hex } : s)));
-  }
-
-  const date = useMemo(() => {
-    const d = new Date(2026, 0, 1);
-    d.setDate(dayOfYear);
-    return d;
-  }, [dayOfYear]);
+  const date = useMemo(() => new Date(dateStr + "T12:00:00"), [dateStr]);
+  const lat = resolved?.latitude ?? DEFAULT_LAT;
 
   const t = dateToT(date, lat);
   const yShift = lerp(WINTER.shift, SUMMER.shift, t);
   const vStretch = lerp(WINTER.stretch, SUMMER.stretch, t);
-  const dl = daylightHours(date, lat);
 
-  const labelStyle: React.CSSProperties = {
-    fontSize: "0.7rem",
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    color: "#a1a1aa",
-    whiteSpace: "nowrap",
-    minWidth: 52,
-  };
-
-  const valStyle: React.CSSProperties = {
-    minWidth: 52,
-    textAlign: "right",
-    fontVariantNumeric: "tabular-nums",
-    fontSize: "0.72rem",
-    color: "#a1a1aa",
-  };
-
-  function toggleVase() {
-    if (!vaseMode) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const trimmed = locationInput.trim();
+    if (!trimmed) {
+      setError("Enter a place name.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await geocodeLocation(trimmed);
+      if (!result) {
+        setError("Couldn't find that place. Try a city or town name.");
+        return;
+      }
+      setResolved(result);
       setFaded(true);
       setTimeout(() => setVaseMode(true), 400);
-    } else {
-      setVaseMode(false);
-      setTimeout(() => setFaded(false), 50);
+    } catch {
+      setError("Something went wrong looking up that location.");
+    } finally {
+      setLoading(false);
     }
   }
+
+  function backToSky() {
+    setVaseMode(false);
+    setTimeout(() => setFaded(false), 50);
+  }
+
+  const placeLabel = resolved
+    ? [resolved.name, resolved.admin1, resolved.country].filter(Boolean).join(", ")
+    : "";
 
   return (
     <>
@@ -118,126 +140,143 @@ export default function Home() {
           justifyContent: "center",
         }}
       >
-        {vaseMode && (
-          <VasePreview date={date} lat={lat} colourMap={colourMap} />
-        )}
+        {vaseMode && <VasePreview date={date} lat={lat} />}
       </div>
 
-      <div
-        style={{
-          position: "fixed",
-          bottom: "2rem",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 10,
-          display: "flex",
-          flexDirection: "column",
-          gap: "0.5rem",
-          background: vaseMode
-            ? "rgba(0,0,0,0.08)"
-            : "rgba(0,0,0,0.55)",
-          backdropFilter: "blur(12px)",
-          borderRadius: "12px",
-          padding: "0.75rem 1.5rem",
-          fontFamily: "system-ui, sans-serif",
-          color: vaseMode ? "#18181b" : "#e4e4e7",
-          fontSize: "0.82rem",
-          minWidth: 380,
-          transition: "background 0.4s, color 0.4s",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <span style={{ ...labelStyle, color: vaseMode ? "#71717a" : "#a1a1aa" }}>
-            {formatDate(date)}
-          </span>
-          <input
-            type="range"
-            min={1}
-            max={365}
-            step={1}
-            value={dayOfYear}
-            onChange={(e) => setDayOfYear(parseInt(e.target.value))}
-            style={{ flex: 1, accentColor: "#a78bfa" }}
-          />
-          <span style={{ ...valStyle, color: vaseMode ? "#71717a" : "#a1a1aa" }}>
-            {dl.toFixed(1)}h
-          </span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-          <span style={{ ...labelStyle, color: vaseMode ? "#71717a" : "#a1a1aa" }}>
-            Lat
-          </span>
-          <input
-            type="range"
-            min={-66}
-            max={66}
-            step={0.5}
-            value={lat}
-            onChange={(e) => setLat(parseFloat(e.target.value))}
-            style={{ flex: 1, accentColor: "#a78bfa" }}
-          />
-          <span style={{ ...valStyle, color: vaseMode ? "#71717a" : "#a1a1aa" }}>
-            {lat.toFixed(1)}°
-          </span>
-        </div>
-        {vaseMode && (
-          <div style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0.35rem",
-            marginTop: "0.25rem",
-            maxWidth: 380,
-          }}>
-            {colourMap.map((stop, i) => (
-              <label
-                key={stop.voltage}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: "0.15rem",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="color"
-                  value={stop.hex}
-                  onChange={(e) => updateColour(i, e.target.value)}
-                  style={{
-                    width: 20,
-                    height: 20,
-                    border: "1px solid #d4d4d8",
-                    borderRadius: 3,
-                    padding: 0,
-                    cursor: "pointer",
-                    background: "none",
-                  }}
-                />
-                <span style={{ fontSize: "0.5rem", color: "#a1a1aa" }}>{stop.voltage}V</span>
-              </label>
-            ))}
-          </div>
-        )}
-        <button
-          onClick={toggleVase}
+      {!vaseMode ? (
+        <form
+          onSubmit={handleSubmit}
           style={{
-            marginTop: "0.25rem",
-            background: vaseMode ? "#a78bfa" : "rgba(255,255,255,0.1)",
-            border: "1px solid rgba(255,255,255,0.15)",
-            color: vaseMode ? "#0e0e10" : "#e4e4e7",
-            borderRadius: "6px",
-            padding: "0.4rem 0.75rem",
+            position: "fixed",
+            bottom: "2rem",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 10,
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.75rem",
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(12px)",
+            borderRadius: "12px",
+            padding: "1.1rem 1.5rem",
             fontFamily: "system-ui, sans-serif",
-            fontSize: "0.7rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            cursor: "pointer",
-            transition: "all 0.2s",
+            color: "#e4e4e7",
+            fontSize: "0.82rem",
+            width: "min(440px, calc(100vw - 2rem))",
           }}
         >
-          {vaseMode ? "Full Sky" : "Vase Preview"}
-        </button>
-      </div>
+          <p
+            style={{
+              margin: 0,
+              fontSize: "0.85rem",
+              lineHeight: 1.45,
+              color: "#e4e4e7",
+            }}
+          >
+            Think of a memory important to you, and enter the day and place
+            where it happened.
+          </p>
+
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <input
+              type="date"
+              value={dateStr}
+              onChange={(e) => setDateStr(e.target.value)}
+              required
+              style={inputStyle}
+            />
+            <input
+              type="text"
+              value={locationInput}
+              onChange={(e) => setLocationInput(e.target.value)}
+              placeholder="e.g. London"
+              required
+              style={{ ...inputStyle, flex: 1, minWidth: 140 }}
+            />
+          </div>
+
+          {error && (
+            <span style={{ fontSize: "0.72rem", color: "#fca5a5" }}>{error}</span>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              background: loading ? "rgba(167,139,250,0.5)" : "#a78bfa",
+              border: "1px solid rgba(255,255,255,0.15)",
+              color: "#0e0e10",
+              borderRadius: "6px",
+              padding: "0.55rem 0.75rem",
+              fontFamily: "system-ui, sans-serif",
+              fontSize: "0.72rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              cursor: loading ? "default" : "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            {loading ? "Finding place\u2026" : "See your vase"}
+          </button>
+        </form>
+      ) : (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "2rem",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 10,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "0.6rem",
+            background: "rgba(0,0,0,0.04)",
+            backdropFilter: "blur(8px)",
+            borderRadius: "12px",
+            padding: "0.75rem 1.25rem",
+            fontFamily: "system-ui, sans-serif",
+            color: "#18181b",
+            fontSize: "0.82rem",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ lineHeight: 1.4 }}>
+            <div style={{ fontWeight: 500 }}>{formatLongDate(date)}</div>
+            <div style={{ color: "#71717a", fontSize: "0.74rem" }}>{placeLabel}</div>
+          </div>
+          <button
+            onClick={backToSky}
+            style={{
+              background: "transparent",
+              border: "1px solid rgba(0,0,0,0.15)",
+              color: "#18181b",
+              borderRadius: "6px",
+              padding: "0.4rem 0.85rem",
+              fontFamily: "system-ui, sans-serif",
+              fontSize: "0.68rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            Edit memory
+          </button>
+        </div>
+      )}
     </>
   );
 }
+
+const inputStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.08)",
+  border: "1px solid rgba(255,255,255,0.18)",
+  color: "#e4e4e7",
+  borderRadius: "6px",
+  padding: "0.45rem 0.65rem",
+  fontFamily: "system-ui, sans-serif",
+  fontSize: "0.78rem",
+  outline: "none",
+  colorScheme: "dark",
+};
