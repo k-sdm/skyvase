@@ -293,9 +293,9 @@ export default function Home() {
               onClick={handlePurchase}
               disabled={purchasing}
               style={{
-                background: "#000",
-                color: "#fff",
-                border: "none",
+                background: "transparent",
+                color: "#18181b",
+                border: "1px solid #000",
                 borderRadius: "9999px",
                 padding: "0.95rem 2rem",
                 fontFamily: "inherit",
@@ -304,7 +304,6 @@ export default function Home() {
                 letterSpacing: "0.01em",
                 cursor: purchasing ? "default" : "pointer",
                 opacity: purchasing ? 0.6 : 1,
-                width: "clamp(180px, 55vw, 220px)",
                 transition: "opacity 0.2s ease",
               }}
             >

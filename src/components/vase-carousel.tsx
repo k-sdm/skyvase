@@ -8,13 +8,7 @@ const SOURCE_HEIGHT = 1350;
 
 // Slide 0 is the personalised vase (MemoryVase). Slides 1..N pull from
 // /public/videos/carousel{n}.webm as plain looping background videos.
-const CAROUSEL_VIDEOS = [
-  "carousel1",
-  "carousel2",
-  "carousel3",
-  "carousel4",
-  "carousel5",
-] as const;
+const CAROUSEL_VIDEOS = ["carousel1", "carousel2", "carousel3"] as const;
 const TOTAL_SLIDES = 1 + CAROUSEL_VIDEOS.length;
 const FADE_MS = 250;
 
