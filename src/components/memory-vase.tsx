@@ -150,6 +150,7 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
               width={SOURCE_WIDTH}
               height={SOURCE_HEIGHT}
               preserveAspectRatio="none"
+              opacity={0.8}
             />
           </g>
         </svg>
