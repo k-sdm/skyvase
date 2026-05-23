@@ -284,16 +284,7 @@ export default function Home() {
                 style={inlineLinkStyle}
                 aria-label="edit memory"
               >
-                {formatLongDate(dateForSky)}
-              </button>
-              {" "}in{" "}
-              <button
-                type="button"
-                onClick={backToSky}
-                style={inlineLinkStyle}
-                aria-label="edit memory"
-              >
-                {resolved?.name ?? placeLabel}
+                {formatLongDate(dateForSky)} in {resolved?.name ?? placeLabel}
               </button>
             </p>
 
@@ -392,6 +383,10 @@ export default function Home() {
             aria-label="embed memory"
             style={{ pointerEvents: ready ? "auto" : "none" }}
           >
+            <span className="embed-memory-btn__glow" aria-hidden>
+              <span className="embed-memory-btn__glow-stroke" />
+              <span className="embed-memory-btn__glow-stroke embed-memory-btn__glow-stroke--blur" />
+            </span>
             embed memory
           </button>
         </main>
