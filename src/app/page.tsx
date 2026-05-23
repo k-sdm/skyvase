@@ -277,6 +277,7 @@ export default function Home() {
                 letterSpacing: "0.01em",
               }}
             >
+              your personal titanium vase anodised with the sky of{" "}
               <button
                 type="button"
                 onClick={backToSky}
@@ -285,7 +286,7 @@ export default function Home() {
               >
                 {formatLongDate(dateForSky)}
               </button>
-              {", "}
+              {" "}in{" "}
               <button
                 type="button"
                 onClick={backToSky}
