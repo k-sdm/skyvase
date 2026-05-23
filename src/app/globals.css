@@ -115,10 +115,12 @@ input.memory-field:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: clamp(180px, 55vw, 220px);
+  width: max-content;
+  max-width: min(92vw, 22rem);
   min-height: 56px;
-  padding: 0.85rem 2rem;
+  padding: 0.85rem 1.75rem;
   border: 1px solid #ffffff;
+  white-space: nowrap;
   border-radius: 9999px;
   background: transparent;
   color: #ffffff;
@@ -154,7 +156,7 @@ input.memory-field:focus {
 .embed-memory-btn__glow-stroke {
   position: absolute;
   inset: 0;
-  border: 1px solid #ffffff;
+  border: 2px solid #ffffff;
   border-radius: inherit;
   opacity: 1;
   box-sizing: border-box;
