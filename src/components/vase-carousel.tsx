@@ -9,6 +9,8 @@ const SOURCE_HEIGHT = 1350;
 // Slide 0 is the personalised vase (MemoryVase). Slides 1..N pull from
 // /public/videos/carousel{n}.webm as plain looping background videos.
 const CAROUSEL_VIDEOS = ["carousel1", "carousel2", "carousel3"] as const;
+/** Bump when carousel .webm files change — busts CDN/browser cache on same paths. */
+const CAROUSEL_VIDEO_VERSION = "2";
 const TOTAL_SLIDES = 1 + CAROUSEL_VIDEOS.length;
 const FADE_MS = 250;
 
@@ -46,7 +48,7 @@ export function VaseCarousel({ date, lat, pairIdx }: VaseCarouselProps) {
         return (
           <video
             key={name}
-            src={`/videos/${name}.webm`}
+            src={`/videos/${name}.webm?v=${CAROUSEL_VIDEO_VERSION}`}
             autoPlay
             loop
             muted
