@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { PAIR_COUNT } from "@/components/memory-vase";
 import { VaseCarousel } from "@/components/vase-carousel";
+import { searchPlace, type GeocodingResult } from "@/lib/geocode";
 import { applyPageChrome } from "@/lib/sky-chrome";
 
 const SkyShader = dynamic(
@@ -118,14 +119,6 @@ function parseDateFlexible(input: string): Date | null {
   return null;
 }
 
-interface GeocodingResult {
-  latitude: number;
-  longitude: number;
-  name: string;
-  country?: string;
-  admin1?: string;
-}
-
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
@@ -160,22 +153,8 @@ export default function Home() {
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
-        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`;
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.results && data.results.length > 0) {
-          const r = data.results[0];
-          setResolved({
-            latitude: r.latitude,
-            longitude: r.longitude,
-            name: r.name,
-            country: r.country,
-            admin1: r.admin1,
-          });
-        } else {
-          setResolved(null);
-        }
+        const result = await searchPlace(query, controller.signal);
+        setResolved(result);
       } catch {
         // request aborted or network error; ignore
       }
