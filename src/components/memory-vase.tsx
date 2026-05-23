@@ -2,38 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { buildVaseGradientStops } from "@/components/vase-preview";
+import {
+  radialStopOffsetPercent,
+  VASE_RADIAL_GRADIENT,
+  VASE_SOURCE_HEIGHT,
+  VASE_SOURCE_WIDTH,
+} from "@/lib/vase-radial-gradient";
 
-// Native dimensions of every video + matching overlay.
-const SOURCE_WIDTH = 1080;
-const SOURCE_HEIGHT = 1350;
-
-// Approximate vase silhouette extent within the 1080x1350 viewBox.
-// Used to place a radial gradient whose concentric rings bend with the
-// cylinder rather than running as straight horizontal bands.
-const VASE_TOP_Y = 466;
-const VASE_BOTTOM_Y = 1214;
-const VASE_HALF_WIDTH = 150;
-const FOCUS_X = SOURCE_WIDTH / 2;
-// Focal point sits just above the top of the vase so the visible
-// bottom arcs of the gradient rings curve subtly across the silhouette
-// (valley in the middle, lifting at the edges) — reads as cylinder
-// curvature without looking obviously circular.
-const FOCUS_Y = 300;
-
-const TOP_DIST = VASE_TOP_Y - FOCUS_Y;
-const BOTTOM_DIST = VASE_BOTTOM_Y - FOCUS_Y;
-// Radius reaches the furthest vase pixel from the focal point so all
-// stop offsets stay <= 1.
-const CURVE_RADIUS = Math.sqrt(
-  VASE_HALF_WIDTH * VASE_HALF_WIDTH +
-    Math.max(Math.abs(TOP_DIST), Math.abs(BOTTOM_DIST)) ** 2
-);
-const RADIAL_START = TOP_DIST / CURVE_RADIUS;
-const RADIAL_END = BOTTOM_DIST / CURVE_RADIUS;
-
-function mapToRadialOffset(linearOffset: number): number {
-  return RADIAL_START + linearOffset * (RADIAL_END - RADIAL_START);
-}
+const SOURCE_WIDTH = VASE_SOURCE_WIDTH;
+const SOURCE_HEIGHT = VASE_SOURCE_HEIGHT;
 
 // Vase silhouettes extracted from public/OVERLAY 1-3.svg.
 // Each path is hand-aligned to its matching video frame.
@@ -129,17 +106,17 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
         <defs>
           <radialGradient
             id={GRADIENT_ID}
-            cx={FOCUS_X}
-            cy={FOCUS_Y}
-            r={CURVE_RADIUS}
-            fx={FOCUS_X}
-            fy={FOCUS_Y}
+            cx={VASE_RADIAL_GRADIENT.cx}
+            cy={VASE_RADIAL_GRADIENT.cy}
+            r={VASE_RADIAL_GRADIENT.r}
+            fx={VASE_RADIAL_GRADIENT.fx}
+            fy={VASE_RADIAL_GRADIENT.fy}
             gradientUnits="userSpaceOnUse"
           >
             {stops.map((s, i) => (
               <stop
                 key={i}
-                offset={`${(mapToRadialOffset(s.offset) * 100).toFixed(3)}%`}
+                offset={radialStopOffsetPercent(s.offset)}
                 stopColor={s.color}
               />
             ))}

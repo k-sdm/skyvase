@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { PAIR_COUNT } from "@/components/memory-vase";
+import { GradientExportControls } from "@/components/gradient-export-controls";
 import { VaseCarousel } from "@/components/vase-carousel";
 import { searchPlace, type GeocodingResult } from "@/lib/geocode";
 import { applyPageChrome } from "@/lib/sky-chrome";
@@ -310,6 +311,12 @@ export default function Home() {
             >
               {purchasing ? "redirecting\u2026" : "purchase"}
             </button>
+
+            <GradientExportControls
+              date={dateForSky}
+              lat={lat}
+              placeName={resolved?.name ?? placeLabel}
+            />
           </>
         )}
       </div>
