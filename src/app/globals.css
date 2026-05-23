@@ -147,7 +147,7 @@ input.memory-field:focus {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  filter: blur(4px);
+  filter: blur(2px);
   opacity: 1;
   z-index: -1;
   pointer-events: none;
