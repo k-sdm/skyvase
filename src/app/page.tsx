@@ -387,6 +387,7 @@ export default function Home() {
               <span className="embed-memory-btn__glow-stroke" />
               <span className="embed-memory-btn__glow-stroke embed-memory-btn__glow-stroke--blur" />
             </span>
+            <span className="embed-memory-btn__stroke-sharp" aria-hidden />
             embed memory
           </button>
         </main>

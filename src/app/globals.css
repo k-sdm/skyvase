@@ -119,10 +119,11 @@ input.memory-field:focus {
   max-width: min(92vw, 22rem);
   min-height: 56px;
   padding: 0.85rem 1.75rem;
-  border: 1px solid #ffffff;
+  border: none;
   white-space: nowrap;
   border-radius: 9999px;
   background: transparent;
+  box-sizing: border-box;
   color: #ffffff;
   font-family: inherit;
   font-size: clamp(1.15rem, 4.5vw, 1.6rem);
@@ -142,14 +143,14 @@ input.memory-field:focus {
   cursor: default;
 }
 
-/* Two stacked strokes, then blur the pair */
+/* All strokes share the same outer edge (inset 0, border-box). */
 .embed-memory-btn__glow {
   position: absolute;
   inset: 0;
   border-radius: inherit;
   filter: blur(2px);
   opacity: 1;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
 }
 
@@ -164,4 +165,14 @@ input.memory-field:focus {
 
 .embed-memory-btn__glow-stroke--blur {
   filter: blur(2px);
+}
+
+.embed-memory-btn__stroke-sharp {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #ffffff;
+  border-radius: inherit;
+  box-sizing: border-box;
+  z-index: 1;
+  pointer-events: none;
 }
