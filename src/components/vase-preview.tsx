@@ -93,6 +93,19 @@ export interface GradientStop {
   color: string;
 }
 
+function offsetForVoltage(v: number, z1End: number, z2End: number): number {
+  const f = (v - V2_START) / (V3 - V2_START);
+  return z1End + f * (z2End - z1End);
+}
+
+function gradientStopsToCss(stops: GradientStop[]): string {
+  const parts = stops.map(
+    (s) => `${s.color} ${(s.offset * 100).toFixed(1)}%`
+  );
+  return `linear-gradient(to bottom, ${parts.join(", ")})`;
+}
+
+/** Dense stops for smooth on-screen SVG/CSS (21 steps through zone 2). */
 export function buildVaseGradientStops(date: Date, lat: number): GradientStop[] {
   const zones = computeZones(date, lat);
   const z1End = zones.zone1;
@@ -109,6 +122,37 @@ export function buildVaseGradientStops(date: Date, lat: number): GradientStop[] 
   }
   stops.push({ offset: 1, color: voltageToColour(V3) });
   return stops;
+}
+
+/** Zone edges + colour-map voltages only — matches Figma control points. */
+export function buildVaseGradientStopsForExport(date: Date, lat: number): GradientStop[] {
+  const zones = computeZones(date, lat);
+  const z1End = zones.zone1;
+  const z2End = zones.zone1 + zones.zone2;
+  const stops: GradientStop[] = [];
+
+  const push = (offset: number, voltage: number) => {
+    stops.push({ offset, color: voltageToColour(voltage) });
+  };
+
+  push(0, V1);
+  if (z1End > 1e-6) push(z1End, V1);
+
+  for (const { voltage } of COLOUR_MAP) {
+    if (voltage <= V2_START || voltage >= V3) continue;
+    const offset = offsetForVoltage(voltage, z1End, z2End);
+    if (offset <= z1End + 1e-6 || offset >= z2End - 1e-6) continue;
+    push(offset, voltage);
+  }
+
+  push(z2End, V3);
+  if (z2End < 1 - 1e-6) push(1, V3);
+
+  return stops.sort((a, b) => a.offset - b.offset);
+}
+
+export function buildVaseGradientForExport(date: Date, lat: number): string {
+  return gradientStopsToCss(buildVaseGradientStopsForExport(date, lat));
 }
 
 export interface VasePreviewProps {

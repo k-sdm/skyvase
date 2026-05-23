@@ -1,6 +1,6 @@
 import {
-  buildVaseGradient,
-  buildVaseGradientStops,
+  buildVaseGradientForExport,
+  buildVaseGradientStopsForExport,
   type GradientStop,
 } from "@/components/vase-preview";
 import {
@@ -46,7 +46,7 @@ function linearStopElements(stops: GradientStop[]): string {
 
 /** Tall linear strip — easiest to recreate as a vertical gradient in Figma. */
 export function buildLinearGradientSvg(date: Date, lat: number): string {
-  const stops = buildVaseGradientStops(date, lat);
+  const stops = buildVaseGradientStopsForExport(date, lat);
   const w = 400;
   const h = 1000;
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -62,7 +62,7 @@ ${linearStopElements(stops)}
 
 /** Radial gradient matching the vase overlay (same geometry as the site). */
 export function buildRadialGradientSvg(date: Date, lat: number): string {
-  const stops = buildVaseGradientStops(date, lat);
+  const stops = buildVaseGradientStopsForExport(date, lat);
   const { cx, cy, r, fx, fy } = VASE_RADIAL_GRADIENT;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${VASE_SOURCE_WIDTH}" height="${VASE_SOURCE_HEIGHT}" viewBox="0 0 ${VASE_SOURCE_WIDTH} ${VASE_SOURCE_HEIGHT}">
@@ -76,17 +76,18 @@ ${buildRadialStopElements(stops)}
 }
 
 export function buildGradientJson(date: Date, lat: number, placeName: string) {
-  const stops = buildVaseGradientStops(date, lat);
+  const stops = buildVaseGradientStopsForExport(date, lat);
   return JSON.stringify(
     {
       place: placeName,
       date: date.toISOString().slice(0, 10),
       latitude: lat,
-      linearCss: buildVaseGradient(date, lat),
+      linearCss: buildVaseGradientForExport(date, lat),
       linearStops: stops.map((s) => ({
         offsetPercent: Math.round(s.offset * 1000) / 10,
         color: s.color,
       })),
+      stopCount: stops.length,
       radialStops: stops.map((s) => ({
         offsetPercent: Math.round(mapLinearStopToRadialOffset(s.offset) * 1000) / 10,
         color: s.color,
@@ -99,7 +100,7 @@ export function buildGradientJson(date: Date, lat: number, placeName: string) {
 }
 
 export function copyLinearGradientCss(date: Date, lat: number): Promise<void> {
-  return navigator.clipboard.writeText(buildVaseGradient(date, lat));
+  return navigator.clipboard.writeText(buildVaseGradientForExport(date, lat));
 }
 
 export function downloadLinearGradientSvg(date: Date, lat: number, placeName: string) {
