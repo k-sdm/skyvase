@@ -14,12 +14,17 @@ const SOURCE_HEIGHT = VASE_SOURCE_HEIGHT;
 
 export const PAIR_COUNT = 3;
 
-const COMPOSITE_STYLE: React.CSSProperties = {
-  position: "absolute",
-  inset: 0,
+const SVG_STYLE: React.CSSProperties = {
+  display: "block",
   width: "100%",
   height: "100%",
-  display: "block",
+};
+
+/** CSS multiply — SVG <g> blend modes do not composite with HTML <video>. */
+const MULTIPLY_LAYER_STYLE: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  mixBlendMode: "multiply",
   pointerEvents: "none",
 };
 
@@ -63,6 +68,7 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
         inset: 0,
         overflow: "hidden",
         background: "#000",
+        isolation: "isolate",
       }}
     >
       {canPlayWebM !== false && (
@@ -87,13 +93,13 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
         />
       )}
 
-      {/* Single 1080×1350 SVG stack — same viewBox scaling as video (preserveAspectRatio none) */}
-      <svg
-        viewBox={`0 0 ${SOURCE_WIDTH} ${SOURCE_HEIGHT}`}
-        preserveAspectRatio="none"
-        aria-hidden
-        style={COMPOSITE_STYLE}
-      >
+      {/* Masked gradient + GLOW; multiply via CSS so it blends with the video */}
+      <div aria-hidden style={MULTIPLY_LAYER_STYLE}>
+        <svg
+          viewBox={`0 0 ${SOURCE_WIDTH} ${SOURCE_HEIGHT}`}
+          preserveAspectRatio="none"
+          style={SVG_STYLE}
+        >
         <defs>
           <mask
             id={maskId}
@@ -129,20 +135,21 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
           </radialGradient>
         </defs>
 
-        <g mask={`url(#${maskId})`} style={{ mixBlendMode: "multiply" }}>
-          <rect
-            width={SOURCE_WIDTH}
-            height={SOURCE_HEIGHT}
-            fill={`url(#${gradientId})`}
-          />
-          <image
-            href="/GLOW.svg"
-            width={SOURCE_WIDTH}
-            height={SOURCE_HEIGHT}
-            preserveAspectRatio="none"
-          />
-        </g>
-      </svg>
+          <g mask={`url(#${maskId})`}>
+            <rect
+              width={SOURCE_WIDTH}
+              height={SOURCE_HEIGHT}
+              fill={`url(#${gradientId})`}
+            />
+            <image
+              href="/GLOW.svg"
+              width={SOURCE_WIDTH}
+              height={SOURCE_HEIGHT}
+              preserveAspectRatio="none"
+            />
+          </g>
+        </svg>
+      </div>
     </div>
   );
 }
