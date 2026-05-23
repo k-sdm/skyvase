@@ -14,26 +14,26 @@ const SOURCE_HEIGHT = VASE_SOURCE_HEIGHT;
 
 export const PAIR_COUNT = 3;
 
-const LAYER_BASE: React.CSSProperties = {
+const COMPOSITE_STYLE: React.CSSProperties = {
   position: "absolute",
   inset: 0,
   width: "100%",
   height: "100%",
+  display: "block",
   pointerEvents: "none",
 };
 
-function overlayMaskStyle(pairIdx: number): React.CSSProperties {
-  const url = `url("/OVERLAY ${pairIdx + 1}.svg")`;
-  return {
-    WebkitMaskImage: url,
-    maskImage: url,
-    WebkitMaskSize: "100% 100%",
-    maskSize: "100% 100%",
-    WebkitMaskRepeat: "no-repeat",
-    maskRepeat: "no-repeat",
-    WebkitMaskPosition: "center",
-    maskPosition: "center",
-  };
+const MEDIA_STYLE: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  width: "100%",
+  height: "100%",
+  objectFit: "fill",
+  display: "block",
+};
+
+function overlayAssetUrl(pairIdx: number): string {
+  return `/OVERLAY ${pairIdx + 1}.svg`;
 }
 
 export interface MemoryVaseProps {
@@ -45,8 +45,9 @@ export interface MemoryVaseProps {
 export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
   const [canPlayWebM, setCanPlayWebM] = useState<boolean | null>(null);
   const stops = buildVaseGradientStops(date, lat);
+  const maskId = `memory-vase-mask-${pairIdx}`;
   const gradientId = `memory-vase-gradient-${pairIdx}`;
-  const maskStyle = overlayMaskStyle(pairIdx);
+  const overlayUrl = overlayAssetUrl(pairIdx);
 
   useEffect(() => {
     const v = document.createElement("video");
@@ -74,14 +75,7 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
           muted
           playsInline
           preload="auto"
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "fill",
-            display: "block",
-          }}
+          style={MEDIA_STYLE}
         />
       )}
 
@@ -89,30 +83,33 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
         <img
           src={`/videos/${oneBased}.jpg`}
           alt=""
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "fill",
-            display: "block",
-          }}
+          style={MEDIA_STYLE}
         />
       )}
 
-      {/* Radial gradient — multiply, masked to OVERLAY silhouette */}
+      {/* Single 1080×1350 SVG stack — same viewBox scaling as video (preserveAspectRatio none) */}
       <svg
         viewBox={`0 0 ${SOURCE_WIDTH} ${SOURCE_HEIGHT}`}
         preserveAspectRatio="none"
         aria-hidden
-        style={{
-          ...LAYER_BASE,
-          mixBlendMode: "multiply",
-          display: "block",
-          ...maskStyle,
-        }}
+        style={COMPOSITE_STYLE}
       >
         <defs>
+          <mask
+            id={maskId}
+            maskUnits="userSpaceOnUse"
+            x={0}
+            y={0}
+            width={SOURCE_WIDTH}
+            height={SOURCE_HEIGHT}
+          >
+            <image
+              href={overlayUrl}
+              width={SOURCE_WIDTH}
+              height={SOURCE_HEIGHT}
+              preserveAspectRatio="none"
+            />
+          </mask>
           <radialGradient
             id={gradientId}
             cx={VASE_RADIAL_GRADIENT.cx}
@@ -131,26 +128,24 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
             ))}
           </radialGradient>
         </defs>
-        <rect
-          width={SOURCE_WIDTH}
-          height={SOURCE_HEIGHT}
-          fill={`url(#${gradientId})`}
-        />
-      </svg>
 
-      {/* GLOW.svg — overlay, same mask */}
-      <img
-        src="/GLOW.svg"
-        alt=""
-        aria-hidden
-        style={{
-          ...LAYER_BASE,
-          objectFit: "fill",
-          mixBlendMode: "overlay",
-          display: "block",
-          ...maskStyle,
-        }}
-      />
+        <g mask={`url(#${maskId})`} style={{ mixBlendMode: "multiply" }}>
+          <rect
+            width={SOURCE_WIDTH}
+            height={SOURCE_HEIGHT}
+            fill={`url(#${gradientId})`}
+          />
+        </g>
+
+        <g mask={`url(#${maskId})`} style={{ mixBlendMode: "overlay" }}>
+          <image
+            href="/GLOW.svg"
+            width={SOURCE_WIDTH}
+            height={SOURCE_HEIGHT}
+            preserveAspectRatio="none"
+          />
+        </g>
+      </svg>
     </div>
   );
 }
