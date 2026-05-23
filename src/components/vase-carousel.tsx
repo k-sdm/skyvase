@@ -31,16 +31,7 @@ export function VaseCarousel({ date, lat, pairIdx }: VaseCarouselProps) {
   const goPrev = () => setIndex((i) => (i - 1 + TOTAL_SLIDES) % TOTAL_SLIDES);
 
   return (
-    <div
-      style={{
-        position: "relative",
-        width: `min(90vw, calc(70vh * 4 / 5))`,
-        aspectRatio: "4 / 5",
-        overflow: "hidden",
-        background: "#000",
-        userSelect: "none",
-      }}
-    >
+    <div className="vase-carousel">
       {/* Slide 0 — personalised vase + gradient overlay */}
       <div
         style={{
@@ -73,7 +64,7 @@ export function VaseCarousel({ date, lat, pairIdx }: VaseCarouselProps) {
               inset: 0,
               width: "100%",
               height: "100%",
-              objectFit: "cover",
+              objectFit: "fill",
               opacity: index === slideIdx ? 1 : 0,
               transition: `opacity ${FADE_MS}ms ease`,
               pointerEvents: "none",

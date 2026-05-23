@@ -8,10 +8,10 @@ interface ColourStop {
 const COLOUR_MAP: ColourStop[] = [
   { voltage: 20, hex: "#39529B" },
   { voltage: 30, hex: "#4D7DC1" },
-  { voltage: 37, hex: "#80B9D6" },
-  { voltage: 47, hex: "#B6B6B6" },
-  { voltage: 58, hex: "#E69857" },
-  { voltage: 64, hex: "#DF5675" },
+  { voltage: 37, hex: "#6FA3CE" },
+  { voltage: 47, hex: "#DAD1AC" },
+  { voltage: 58, hex: "#E6A357" },
+  { voltage: 64, hex: "#C372A0" },
 ];
 
 const V1 = 20, V2_START = 20, V3 = 64;
