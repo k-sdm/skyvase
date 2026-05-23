@@ -135,9 +135,6 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
             height={SOURCE_HEIGHT}
             fill={`url(#${gradientId})`}
           />
-        </g>
-
-        <g mask={`url(#${maskId})`} style={{ mixBlendMode: "overlay" }}>
           <image
             href="/GLOW.svg"
             width={SOURCE_WIDTH}
