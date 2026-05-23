@@ -385,62 +385,14 @@ export default function Home() {
 
           <button
             type="button"
+            className={`embed-memory-btn${ready ? " is-visible" : ""}`}
             onClick={goToVase}
             disabled={!ready}
             aria-hidden={!ready}
             aria-label="embed memory"
-            style={{
-              pointerEvents: ready ? "auto" : "none",
-              opacity: ready ? 1 : 0,
-              transform: ready ? "translateY(0)" : "translateY(8px)",
-              transition: "opacity 0.5s ease, transform 0.5s ease",
-              background: "transparent",
-              border: "none",
-              padding: 0,
-              cursor: ready ? "pointer" : "default",
-              display: "block",
-            }}
+            style={{ pointerEvents: ready ? "auto" : "none" }}
           >
-            <svg
-              viewBox="0 0 220 56"
-              preserveAspectRatio="xMidYMid meet"
-              role="presentation"
-              aria-hidden="true"
-              style={{
-                width: "clamp(180px, 55vw, 220px)",
-                height: "auto",
-                display: "block",
-              }}
-            >
-              <defs>
-                <mask id="embed-memory-cutout">
-                  <rect width="220" height="56" fill="#fff" />
-                  <text
-                    x="110"
-                    y="28"
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill="#000"
-                    style={{
-                      fontFamily: "var(--font-kh-teka), system-ui, sans-serif",
-                      fontSize: 20,
-                      fontWeight: 300,
-                      letterSpacing: "0.01em",
-                    }}
-                  >
-                    embed memory
-                  </text>
-                </mask>
-              </defs>
-              <rect
-                width="220"
-                height="56"
-                rx="28"
-                ry="28"
-                fill="#fff"
-                mask="url(#embed-memory-cutout)"
-              />
-            </svg>
+            embed memory
           </button>
         </main>
       )}
