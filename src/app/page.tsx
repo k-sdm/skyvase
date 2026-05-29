@@ -12,36 +12,7 @@ const SkyShader = dynamic(
   { ssr: false }
 );
 
-const WINTER = { shift: 0.78, stretch: 0.25 };
-const SUMMER = { shift: 0.10, stretch: 1.00 };
-
 const DEFAULT_LAT = 51.5;
-
-function daylightHours(date: Date, lat: number): number {
-  const doy = Math.floor(
-    (date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / 86400000
-  );
-  const decRad = (23.45 * Math.PI) / 180 * Math.sin(((2 * Math.PI) / 365) * (doy - 81));
-  const latRad = (lat * Math.PI) / 180;
-  const cosHA = (-Math.sin((-0.83 * Math.PI) / 180) - Math.sin(latRad) * Math.sin(decRad))
-    / (Math.cos(latRad) * Math.cos(decRad));
-  const ha = Math.acos(Math.max(-1, Math.min(1, cosHA)));
-  return (2 * ha * 180) / (Math.PI * 15);
-}
-
-const MAX_LAT = 66;
-const GLOBAL_MIN_DL = daylightHours(new Date(2026, 11, 21), MAX_LAT);
-const GLOBAL_MAX_DL = daylightHours(new Date(2026, 5, 21), MAX_LAT);
-
-function dateToT(date: Date, lat: number): number {
-  const dl = daylightHours(date, lat);
-  const range = GLOBAL_MAX_DL - GLOBAL_MIN_DL;
-  return Math.max(0, Math.min(1, (dl - GLOBAL_MIN_DL) / range));
-}
-
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
 
 function formatLongDate(d: Date): string {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
@@ -168,10 +139,6 @@ export default function Home() {
   const dateForSky = parsedDate ?? new Date();
   const lat = resolved?.latitude ?? DEFAULT_LAT;
 
-  const t = dateToT(dateForSky, lat);
-  const yShift = lerp(WINTER.shift, SUMMER.shift, t);
-  const vStretch = lerp(WINTER.stretch, SUMMER.stretch, t);
-
   useEffect(() => {
     applyPageChrome();
   }, []);
@@ -220,7 +187,7 @@ export default function Home() {
   return (
     <>
       {!vaseMode && <div className="viewport-bleed sky-backdrop" aria-hidden />}
-      <SkyShader yShift={yShift} vStretch={vStretch} />
+      <SkyShader />
 
       {/* Hidden preloader so the WebM is already in cache before the user
           transitions to the vase page. */}

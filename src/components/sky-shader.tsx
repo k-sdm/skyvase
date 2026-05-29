@@ -1,12 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
-
-export interface SkyShaderProps {
-  yShift: number;   // screen-space vertical shift, -2 to +2 (fraction of screen height)
-  vStretch: number; // vertical stretch multiplier, 0.05 (squished) to 3 (tall)
-}
 
 const vertexShader = /* glsl */ `
   uniform vec3 sunPosition;
@@ -59,6 +54,12 @@ const vertexShader = /* glsl */ `
 const fragmentShader = /* glsl */ `
   uniform float mieDirectionalG;
   uniform vec3 up;
+  uniform float cloudScale;
+  uniform float cloudSpeed;
+  uniform float cloudCoverage;
+  uniform float cloudDensity;
+  uniform float cloudElevation;
+  uniform float time;
 
   varying vec3 vWorldPosition;
   varying vec3 vSunDirection;
@@ -73,6 +74,33 @@ const fragmentShader = /* glsl */ `
   const float sunAngularDiameterCos = 0.999956676946448443553574619906976478926848692;
   const float THREE_OVER_SIXTEENPI = 0.05968310365946075;
   const float ONE_OVER_FOURPI = 0.07957747154594767;
+
+  // Cloud noise functions
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+  }
+
+  float fbm(vec2 p) {
+    float value = 0.0;
+    float amplitude = 0.5;
+    for (int i = 0; i < 5; i++) {
+      value += amplitude * noise(p);
+      p *= 2.0;
+      amplitude *= 0.5;
+    }
+    return value;
+  }
 
   float rayleighPhase(float cosTheta) {
     return THREE_OVER_SIXTEENPI * (1.0 + pow(cosTheta, 2.0));
@@ -112,6 +140,43 @@ const fragmentShader = /* glsl */ `
     // L0 += (vSunE * 19000.0 * Fex) * sundisk;
 
     vec3 texColor = (Lin + L0) * 0.04 + vec3(0.0, 0.0003, 0.00075);
+
+    // Clouds
+    if (direction.y > 0.0 && cloudCoverage > 0.0) {
+
+      // Project to cloud plane (higher elevation = clouds appear lower/closer)
+      float elevation = mix(1.0, 0.1, cloudElevation);
+      vec2 cloudUV = direction.xz / (direction.y * elevation);
+      cloudUV *= cloudScale;
+      cloudUV += time * cloudSpeed;
+
+      // Multi-octave noise for fluffy clouds
+      float cloudNoise = fbm(cloudUV * 1000.0);
+      cloudNoise += 0.5 * fbm(cloudUV * 2000.0 + 3.7);
+      cloudNoise = cloudNoise * 0.5 + 0.5;
+
+      // Apply coverage threshold
+      float cloudMask = smoothstep(1.0 - cloudCoverage, 1.0 - cloudCoverage + 0.3, cloudNoise);
+
+      // Fade clouds near horizon (adjusted by elevation)
+      float horizonFade = smoothstep(0.0, 0.1 + 0.2 * cloudElevation, direction.y);
+      cloudMask *= horizonFade;
+
+      // Cloud lighting based on sun position
+      float sunInfluence = dot(direction, vSunDirection) * 0.5 + 0.5;
+      float daylight = max(0.0, vSunDirection.y * 2.0);
+
+      // Base cloud color affected by atmosphere
+      vec3 atmosphereColor = Lin * 0.04;
+      vec3 cloudColor = mix(vec3(0.3), vec3(1.0), daylight);
+      cloudColor = mix(cloudColor, atmosphereColor + vec3(1.0), sunInfluence * 0.5);
+      cloudColor *= vSunE * 0.00002;
+
+      // Blend clouds with sky
+      texColor = mix(texColor, cloudColor, cloudMask * cloudDensity);
+
+    }
+
     vec3 retColor = pow(texColor, vec3(1.0 / (1.2 + (1.2 * vSunfade))));
 
     gl_FragColor = vec4(retColor, 1.0);
@@ -120,10 +185,16 @@ const fragmentShader = /* glsl */ `
 
 const PITCH_DEG = 22;
 
-// Easing factor per frame (~60fps). Smaller = slower, more dramatic.
-const SKY_EASE = 0.045;
-
 const SKY_CLEAR = 0xffffff;
+
+// Cloud appearance — tune to taste.
+const CLOUDS = {
+  scale: 0.0002,
+  speed: 0.0001,
+  coverage: 0.3,
+  density: 0.25,
+  elevation: 0.45,
+};
 
 function isMobileSafari() {
   if (typeof navigator === "undefined") return false;
@@ -180,20 +251,8 @@ function applyCanvasLayout(
   }
 }
 
-export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
+export function SkyShader() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const targetRef = useRef({ yShift, vStretch });
-  const currentRef = useRef({ yShift, vStretch });
-  targetRef.current = { yShift, vStretch };
-
-  const applyProjection = useCallback(
-    (cam: THREE.PerspectiveCamera, y: number, s: number) => {
-      cam.updateProjectionMatrix();
-      cam.projectionMatrix.elements[5] *= s;
-      cam.projectionMatrix.elements[9] = y;
-    },
-    []
-  );
 
   useEffect(() => {
     const el = canvasRef.current;
@@ -216,7 +275,6 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
       200 + Math.sin(pitchRad) * 1000,
       -Math.cos(pitchRad) * 1000
     );
-    applyProjection(camera, currentRef.current.yShift, currentRef.current.vStretch);
 
     const skyGeo = new THREE.SphereGeometry(450000, 32, 15);
     const skyMat = new THREE.ShaderMaterial({
@@ -229,6 +287,12 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
         mieDirectionalG: { value: 0.7 },
         sunPosition: { value: new THREE.Vector3() },
         up: { value: new THREE.Vector3(0, 1, 0) },
+        cloudScale: { value: CLOUDS.scale },
+        cloudSpeed: { value: CLOUDS.speed },
+        cloudCoverage: { value: CLOUDS.coverage },
+        cloudDensity: { value: CLOUDS.density },
+        cloudElevation: { value: CLOUDS.elevation },
+        time: { value: 0 },
       },
       side: THREE.BackSide,
       depthWrite: false,
@@ -241,14 +305,11 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
     sun.setFromSphericalCoords(1, phi, theta);
     skyMat.uniforms.sunPosition.value.copy(sun);
 
+    const clock = new THREE.Clock();
     let animId: number;
     function animate() {
       animId = requestAnimationFrame(animate);
-      const target = targetRef.current;
-      const cur = currentRef.current;
-      cur.yShift += (target.yShift - cur.yShift) * SKY_EASE;
-      cur.vStretch += (target.vStretch - cur.vStretch) * SKY_EASE;
-      applyProjection(camera, cur.yShift, cur.vStretch);
+      skyMat.uniforms.time.value = clock.getElapsedTime();
       renderer.render(scene, camera);
     }
     animate();
@@ -257,7 +318,7 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
       const layout = readCanvasSize(canvas);
       applyCanvasLayout(canvas, layout);
       camera.aspect = layout.width / layout.height;
-      applyProjection(camera, currentRef.current.yShift, currentRef.current.vStretch);
+      camera.updateProjectionMatrix();
       renderer.setSize(layout.width, layout.height, false);
     }
     onResize();
@@ -279,7 +340,7 @@ export function SkyShader({ yShift, vStretch }: SkyShaderProps) {
       skyGeo.dispose();
       skyMat.dispose();
     };
-  }, [applyProjection]);
+  }, []);
 
   return (
     <canvas
