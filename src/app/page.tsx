@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { PAIR_COUNT } from "@/components/memory-vase";
+import { MEMORY_VIDEO_VERSION, PAIR_COUNT } from "@/components/memory-vase";
 import { VaseCarousel } from "@/components/vase-carousel";
-import { searchPlace, type GeocodingResult } from "@/lib/geocode";
+import { fetchHere, HERE_QUERIES, searchPlace, type GeocodingResult } from "@/lib/geocode";
 import { applyPageChrome } from "@/lib/sky-chrome";
 
 const SkyShader = dynamic(
@@ -36,11 +36,62 @@ function isValidYMD(d: Date, y: number, m: number, day: number): boolean {
   return d.getFullYear() === y && d.getMonth() === m && d.getDate() === day;
 }
 
+const NUM_WORDS: Record<string, number> = {
+  a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+  seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+  couple: 2, few: 3,
+};
+
+function parseQuantity(tok: string): number | null {
+  if (/^\d+$/.test(tok)) return parseInt(tok, 10);
+  return tok in NUM_WORDS ? NUM_WORDS[tok] : null;
+}
+
+function shiftByUnit(base: Date, amount: number, unit: string): Date {
+  const d = new Date(base);
+  if (unit.startsWith("day")) d.setDate(d.getDate() + amount);
+  else if (unit.startsWith("week")) d.setDate(d.getDate() + amount * 7);
+  else if (unit.startsWith("month")) d.setMonth(d.getMonth() + amount);
+  else if (unit.startsWith("year")) d.setFullYear(d.getFullYear() + amount);
+  return d;
+}
+
+// Interpret relative phrases like "today", "yesterday", "a week ago",
+// "3 months ago", "last year". Returns null if the input isn't relative.
+function parseRelativeDate(input: string, now: Date): Date | null {
+  const s = input.trim().toLowerCase().replace(/[.!]+$/, "");
+  if (!s) return null;
+
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (s === "today" || s === "now" || s === "tonight") return today;
+  if (s === "yesterday") return shiftByUnit(today, -1, "day");
+  if (s === "tomorrow") return shiftByUnit(today, 1, "day");
+  if (s === "day before yesterday" || s === "the day before yesterday") {
+    return shiftByUnit(today, -2, "day");
+  }
+
+  let m = s.match(/^last\s+(day|week|month|year)$/);
+  if (m) return shiftByUnit(today, -1, m[1]);
+
+  m = s.match(/^(.+?)\s+(day|days|week|weeks|month|months|year|years)\s+(?:ago|back)$/);
+  if (m) {
+    const word = m[1].replace(/\s+of$/, "").trim().split(/\s+/).pop() ?? "";
+    const n = parseQuantity(word);
+    if (n !== null) return shiftByUnit(today, -n, m[2]);
+  }
+
+  return null;
+}
+
 // Parse a wide variety of UK-leaning date formats.
 // Returns null when the input cannot confidently be turned into a date.
 function parseDateFlexible(input: string): Date | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
+
+  const relative = parseRelativeDate(trimmed, new Date());
+  if (relative) return relative;
 
   let m = trimmed.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/);
   if (m) {
@@ -124,7 +175,9 @@ export default function Home() {
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
-        const result = await searchPlace(query, controller.signal);
+        const result = HERE_QUERIES.has(query.toLowerCase())
+          ? await fetchHere(controller.signal)
+          : await searchPlace(query, controller.signal);
         setResolved(result);
       } catch {
         // request aborted or network error; ignore
@@ -193,7 +246,7 @@ export default function Home() {
           transitions to the vase page. */}
       {pairIdx !== null && !vaseMode && (
         <video
-          src={`/videos/${pairIdx + 1}.webm`}
+          src={`/videos/${pairIdx + 1}.webm?v=${MEMORY_VIDEO_VERSION}`}
           preload="auto"
           muted
           playsInline

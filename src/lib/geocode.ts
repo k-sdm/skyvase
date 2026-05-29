@@ -208,6 +208,25 @@ export function pickBestGeocodeResult(
   return toGeocodingResult(query, best, normalize(best.admin1 ?? "") === q);
 }
 
+/** Words that mean "use my current (rough, IP-based) location". */
+export const HERE_QUERIES = new Set([
+  "here",
+  "my location",
+  "current location",
+  "where i am",
+]);
+
+/** Resolve the visitor's approximate location from Vercel's IP geo headers. */
+export async function fetchHere(signal?: AbortSignal): Promise<GeocodingResult | null> {
+  const res = await fetch("/api/here", { signal });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (typeof data?.latitude !== "number" || typeof data?.longitude !== "number") {
+    return null;
+  }
+  return data as GeocodingResult;
+}
+
 export async function searchPlace(
   input: string,
   signal?: AbortSignal

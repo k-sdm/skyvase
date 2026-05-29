@@ -14,6 +14,9 @@ const SOURCE_HEIGHT = VASE_SOURCE_HEIGHT;
 
 export const PAIR_COUNT = 3;
 
+/** Bump when 1/2/3.webm change — busts CDN/browser cache on the same paths. */
+export const MEMORY_VIDEO_VERSION = "2";
+
 const SVG_STYLE: React.CSSProperties = {
   display: "block",
   width: "100%",
@@ -76,7 +79,7 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
         <video
           key={oneBased}
           className="memory-vase__video"
-          src={`/videos/${oneBased}.webm`}
+          src={`/videos/${oneBased}.webm?v=${MEMORY_VIDEO_VERSION}`}
           poster={`/videos/${oneBased}.jpg`}
           autoPlay
           loop
