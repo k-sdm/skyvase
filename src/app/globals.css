@@ -91,11 +91,15 @@ canvas.viewport-bleed {
   bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
   text-align: center;
   padding: clamp(0.6rem, 2vw, 0.9rem);
-  font-family: inherit;
-  font-size: clamp(0.65rem, 2vw, 0.75rem);
-  color: rgba(255, 255, 255, 0.55);
   pointer-events: none;
-  letter-spacing: 0.02em;
+}
+
+.site-footer__logo {
+  display: inline-block;
+  width: auto;
+  height: clamp(20px, 5vw, 26px);
+  opacity: 0.55;
+  pointer-events: auto;
 }
 
 /* Extra lift on phones so the credit line sits above Safari’s bottom bar. */
@@ -109,8 +113,11 @@ input.memory-field {
   background: transparent;
   border: none;
   outline: none;
-  color: #ffffff;
-  font-family: inherit;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--font-kh-teka-italic), var(--font-kh-teka), system-ui, sans-serif;
+  font-style: italic;
+  text-decoration: underline;
+  text-underline-offset: 4px;
   text-align: center;
   width: 100%;
 }
@@ -118,6 +125,7 @@ input.memory-field {
 input.memory-field::placeholder {
   color: rgba(255, 255, 255, 0.55);
   font-family: inherit;
+  font-style: italic;
 }
 
 input.memory-field:focus {
@@ -145,16 +153,18 @@ input.memory-field:focus {
   letter-spacing: 0.01em;
   line-height: 1.35;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-}
-
-.embed-memory-btn.is-visible {
   opacity: 1;
+  transition: opacity 0.4s ease;
 }
 
+/* Form incomplete: drop the glow, fade stroke + text to 60%. */
 .embed-memory-btn:disabled {
   cursor: default;
+  opacity: 0.6;
+}
+
+.embed-memory-btn:disabled .embed-memory-btn__glow {
+  opacity: 0;
 }
 
 /* Two stacked strokes, then blur the pair */

@@ -10,6 +10,14 @@ const khTeka = localFont({
   weight: "300",
 });
 
+const khTekaItalic = localFont({
+  src: "../fonts/KHTeka-LightItalic.otf",
+  variable: "--font-kh-teka-italic",
+  display: "swap",
+  weight: "300",
+  style: "italic",
+});
+
 export const metadata: Metadata = {
   title: "sky vase",
   description:
@@ -36,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${khTeka.variable} antialiased`}>
+    <html lang="en" className={`${khTeka.variable} ${khTekaItalic.variable} antialiased`}>
       <body className="m-0 overflow-hidden">
         {children}
         <Analytics />

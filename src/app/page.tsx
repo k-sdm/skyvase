@@ -149,6 +149,22 @@ function formatDDMMYYYY(d: Date): string {
   return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
 }
 
+function ordinalSuffix(n: number): string {
+  const v = n % 100;
+  if (v >= 11 && v <= 13) return "th";
+  switch (n % 10) {
+    case 1: return "st";
+    case 2: return "nd";
+    case 3: return "rd";
+    default: return "th";
+  }
+}
+
+// Placeholder hint for the date field, e.g. "1st june 2026".
+function formatPlaceholderDate(d: Date): string {
+  return `${d.getDate()}${ordinalSuffix(d.getDate())} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 export default function Home() {
   const [dateInput, setDateInput] = useState("");
   const [placeInput, setPlaceInput] = useState("");
@@ -159,9 +175,26 @@ export default function Home() {
   // Pick the video/overlay pair on mount so we can preload the WebM before
   // the user ever clicks through to the vase page.
   const [pairIdx, setPairIdx] = useState<number | null>(null);
+  // Location-field placeholder: the visitor's IP-detected city, with a
+  // static fallback (only resolves on the deployed Vercel site).
+  const [placePlaceholder, setPlacePlaceholder] = useState("London, England");
+
+  const datePlaceholder = formatPlaceholderDate(new Date());
 
   useEffect(() => {
     setPairIdx(Math.floor(Math.random() * PAIR_COUNT));
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetchHere()
+      .then((r) => {
+        if (active && r?.name) setPlacePlaceholder(r.name);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, []);
 
   const parsedDate = useMemo(() => parseDateFlexible(dateInput), [dateInput]);
@@ -348,59 +381,45 @@ export default function Home() {
             color: "#ffffff",
           }}
         >
-          <p
-            style={{
-              fontSize: "clamp(1.15rem, 4.5vw, 1.6rem)",
-              lineHeight: 1.35,
-              textAlign: "center",
-              maxWidth: "28ch",
-              letterSpacing: "0.01em",
-              fontWeight: 300,
-            }}
-          >
+          <p style={promptStyle}>
             think back to a moment that means something to you
           </p>
 
-          <input
-            className="memory-field"
-            type="text"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="enter the date when it happened"
-            value={dateInput}
-            onChange={(e) => setDateInput(e.target.value)}
-            style={{
-              pointerEvents: "auto",
-              fontSize: "clamp(1.15rem, 4.5vw, 1.6rem)",
-              fontWeight: 300,
-              maxWidth: "28ch",
-            }}
-          />
+          <div style={fieldGroupStyle}>
+            <p style={promptStyle}>when did it happen?</p>
+            <input
+              className="memory-field"
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={datePlaceholder}
+              value={dateInput}
+              onChange={(e) => setDateInput(e.target.value)}
+              style={fieldStyle}
+            />
+          </div>
 
-          <input
-            className="memory-field"
-            type="text"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="and where you were in the world"
-            value={placeInput}
-            onChange={(e) => setPlaceInput(e.target.value)}
-            style={{
-              pointerEvents: "auto",
-              fontSize: "clamp(1.15rem, 4.5vw, 1.6rem)",
-              fontWeight: 300,
-              maxWidth: "28ch",
-            }}
-          />
+          <div style={fieldGroupStyle}>
+            <p style={promptStyle}>and where were you in the world?</p>
+            <input
+              className="memory-field"
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={placePlaceholder}
+              value={placeInput}
+              onChange={(e) => setPlaceInput(e.target.value)}
+              style={fieldStyle}
+            />
+          </div>
 
           <button
             type="button"
-            className={`embed-memory-btn${ready ? " is-visible" : ""}`}
+            className="embed-memory-btn"
             onClick={goToVase}
             disabled={!ready}
-            aria-hidden={!ready}
             aria-label="embed memory"
-            style={{ pointerEvents: ready ? "auto" : "none" }}
+            style={{ pointerEvents: "auto" }}
           >
             <span className="embed-memory-btn__glow" aria-hidden>
               <span className="embed-memory-btn__glow-stroke" />
@@ -414,19 +433,14 @@ export default function Home() {
 
       {!vaseMode && (
         <footer className="site-footer">
-          A project by{" "}
           <a
             href="https://www.instagram.com/kiran.sdm/"
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              color: "inherit",
-              textDecoration: "underline",
-              textUnderlineOffset: "3px",
-              pointerEvents: "auto",
-            }}
+            aria-label="Kiran Scott de Martinville on Instagram"
           >
-            Kiran Scott de Martinville
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ksdm.svg" alt="KSDM" className="site-footer__logo" />
           </a>
         </footer>
       )}
@@ -446,4 +460,31 @@ const inlineLinkStyle: React.CSSProperties = {
   textDecoration: "underline",
   textUnderlineOffset: "3px",
   lineHeight: "inherit",
+};
+
+// Bright, non-italic prompt text — the questions the visitor reads.
+const promptStyle: React.CSSProperties = {
+  fontSize: "clamp(1.15rem, 4.5vw, 1.6rem)",
+  lineHeight: 1.35,
+  textAlign: "center",
+  maxWidth: "28ch",
+  letterSpacing: "0.01em",
+  fontWeight: 300,
+};
+
+// Stacks a prompt directly above its input on its own line.
+const fieldGroupStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: "0.5rem",
+  width: "100%",
+  maxWidth: "28ch",
+};
+
+const fieldStyle: React.CSSProperties = {
+  pointerEvents: "auto",
+  fontSize: "clamp(1.15rem, 4.5vw, 1.6rem)",
+  fontWeight: 300,
+  maxWidth: "28ch",
 };

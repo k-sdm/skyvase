@@ -187,12 +187,11 @@ const PITCH_DEG = 22;
 
 const SKY_CLEAR = 0xffffff;
 
-// Subtle camera "wiggle" parallax driven by cursor / device tilt — tune to taste.
+// Subtle camera "wiggle" parallax driven by the desktop mouse — tune to taste.
 const WIGGLE = {
   yawDeg: 2.2,   // max horizontal sway
   pitchDeg: 1.6, // max vertical sway
   ease: 0.06,    // smoothing toward target per frame (~60fps)
-  tiltRangeDeg: 24, // device tilt that maps to full deflection on mobile
 };
 
 // Cloud appearance — tune to taste.
@@ -296,49 +295,18 @@ export function SkyShader() {
     }
     applyLook(0, 0);
 
-    // Target is driven by cursor (desktop) or device orientation (mobile);
-    // current eases toward it each frame for a soft, floaty feel.
+    // Target is driven by cursor position (desktop pointer only); current
+    // eases toward it each frame for a soft, floaty feel.
     const target = { x: 0, y: 0 };
     const current = { x: 0, y: 0 };
 
     function onPointerMove(e: PointerEvent) {
+      // Ignore touch/pen so the wiggle stays a desktop-mouse-only effect.
+      if (e.pointerType !== "mouse") return;
       target.x = (e.clientX / window.innerWidth) * 2 - 1;
       target.y = -((e.clientY / window.innerHeight) * 2 - 1);
     }
     window.addEventListener("pointermove", onPointerMove);
-
-    // Device orientation (accelerometer/gyro) for mobile. The first reading
-    // becomes the neutral baseline so the resting view matches how the phone
-    // is being held.
-    let tiltBase: { beta: number; gamma: number } | null = null;
-    function onOrientation(e: DeviceOrientationEvent) {
-      if (e.beta == null || e.gamma == null) return;
-      if (!tiltBase) tiltBase = { beta: e.beta, gamma: e.gamma };
-      const clamp = (v: number) => Math.max(-1, Math.min(1, v));
-      target.x = clamp((e.gamma - tiltBase.gamma) / WIGGLE.tiltRangeDeg);
-      target.y = clamp((e.beta - tiltBase.beta) / WIGGLE.tiltRangeDeg);
-    }
-
-    // iOS 13+ gates orientation behind a permission prompt that must be
-    // triggered by a user gesture; other platforms can listen immediately.
-    const DOE = window.DeviceOrientationEvent as
-      | (typeof DeviceOrientationEvent & { requestPermission?: () => Promise<string> })
-      | undefined;
-    let onFirstTouch: (() => void) | null = null;
-    if (DOE && typeof DOE.requestPermission === "function") {
-      onFirstTouch = () => {
-        DOE.requestPermission!()
-          .then((state) => {
-            if (state === "granted") {
-              window.addEventListener("deviceorientation", onOrientation);
-            }
-          })
-          .catch(() => {});
-      };
-      window.addEventListener("touchend", onFirstTouch, { once: true });
-    } else if (DOE) {
-      window.addEventListener("deviceorientation", onOrientation);
-    }
 
     const skyGeo = new THREE.SphereGeometry(450000, 32, 15);
     const skyMat = new THREE.ShaderMaterial({
@@ -403,8 +371,6 @@ export function SkyShader() {
       window.visualViewport?.removeEventListener("resize", onResize);
       window.visualViewport?.removeEventListener("scroll", onResize);
       window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("deviceorientation", onOrientation);
-      if (onFirstTouch) window.removeEventListener("touchend", onFirstTouch);
       resizeObserver.disconnect();
       renderer.dispose();
       skyGeo.dispose();
