@@ -156,6 +156,10 @@ export default function Home() {
   const [vaseMode, setVaseMode] = useState(false);
   const [faded, setFaded] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+  // Which field (if any) currently holds the real caret. Mobile browsers block
+  // autofocus, so we render a fake blinking caret in the pending field whenever
+  // nothing is focused.
+  const [focusedField, setFocusedField] = useState<null | "date" | "place">(null);
   // Pick the video/overlay pair on mount so we can preload the WebM before
   // the user ever clicks through to the vase page.
   const [pairIdx, setPairIdx] = useState<number | null>(null);
@@ -197,6 +201,16 @@ export default function Home() {
   }, []);
 
   const ready = parsedDate !== null && resolved !== null;
+
+  // Fake caret cue: sits in the date field until a date parses, then the
+  // location field. Only shown when nothing is focused (so it never doubles
+  // with the real caret) and the target field is still empty.
+  const caretField: "date" | "place" | null =
+    parsedDate === null ? "date" : resolved === null ? "place" : null;
+  const showDateCaret =
+    caretField === "date" && focusedField === null && dateInput.trim() === "";
+  const showPlaceCaret =
+    caretField === "place" && focusedField === null && placeInput.trim() === "";
 
   function goToVase() {
     if (!ready) return;
@@ -352,28 +366,48 @@ export default function Home() {
             think back to a moment that means something to you
           </p>
 
-          <input
-            className="memory-field"
-            type="text"
-            autoComplete="off"
-            spellCheck={false}
-            autoFocus
-            placeholder="enter the date when it happened"
-            value={dateInput}
-            onChange={(e) => setDateInput(e.target.value)}
-            style={{ ...fieldStyle, color: parsedDate ? "#ffffff" : undefined }}
-          />
+          <div style={fieldWrapStyle}>
+            <input
+              className="memory-field"
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              autoFocus
+              placeholder={showDateCaret ? "" : DATE_PLACEHOLDER}
+              value={dateInput}
+              onChange={(e) => setDateInput(e.target.value)}
+              onFocus={() => setFocusedField("date")}
+              onBlur={() => setFocusedField(null)}
+              style={{ ...fieldStyle, color: parsedDate ? "#ffffff" : undefined }}
+            />
+            {showDateCaret && (
+              <div className="caret-overlay" aria-hidden style={caretOverlayStyle}>
+                <span>{DATE_PLACEHOLDER}</span>
+                <span className="fake-caret" />
+              </div>
+            )}
+          </div>
 
-          <input
-            className="memory-field"
-            type="text"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="and the city you were in"
-            value={placeInput}
-            onChange={(e) => setPlaceInput(e.target.value)}
-            style={{ ...fieldStyle, color: resolved ? "#ffffff" : undefined }}
-          />
+          <div style={fieldWrapStyle}>
+            <input
+              className="memory-field"
+              type="text"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={showPlaceCaret ? "" : PLACE_PLACEHOLDER}
+              value={placeInput}
+              onChange={(e) => setPlaceInput(e.target.value)}
+              onFocus={() => setFocusedField("place")}
+              onBlur={() => setFocusedField(null)}
+              style={{ ...fieldStyle, color: resolved ? "#ffffff" : undefined }}
+            />
+            {showPlaceCaret && (
+              <div className="caret-overlay" aria-hidden style={caretOverlayStyle}>
+                <span>{PLACE_PLACEHOLDER}</span>
+                <span className="fake-caret" />
+              </div>
+            )}
+          </div>
 
           <button
             type="button"
@@ -444,4 +478,21 @@ const fieldStyle: React.CSSProperties = {
   fontSize: TEXT_SIZE,
   fontWeight: 300,
   maxWidth: "28ch",
+};
+
+const DATE_PLACEHOLDER = "enter the date when it happened";
+const PLACE_PLACEHOLDER = "and the city you were in";
+
+// Relative box so the fake-caret overlay can sit on top of the input.
+const fieldWrapStyle: React.CSSProperties = {
+  position: "relative",
+  display: "flex",
+  justifyContent: "center",
+  width: "100%",
+  maxWidth: "28ch",
+};
+
+const caretOverlayStyle: React.CSSProperties = {
+  fontSize: TEXT_SIZE,
+  fontWeight: 300,
 };
