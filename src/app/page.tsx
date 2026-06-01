@@ -424,18 +424,17 @@ const inlineLinkStyle: React.CSSProperties = {
   lineHeight: "inherit",
 };
 
-// Shared text size — scales with viewport width so the longest prompt
-// ("think back to a moment that means something to you") fits on one line
-// down to phone widths, while capping at 1.6rem on desktop.
-const TEXT_SIZE = "clamp(0.5rem, 2.5vw, 1.6rem)";
+// Shared text size — identical to the "embed memory" button so the prompts,
+// inputs and button all read at the same scale. Text wraps as needed rather
+// than shrinking to fit one line.
+const TEXT_SIZE = "clamp(1.15rem, 4.5vw, 1.6rem)";
 
 // Bright, non-italic prompt text — the questions the visitor reads.
-// Kept on a single line (no wrap).
 const promptStyle: React.CSSProperties = {
   fontSize: TEXT_SIZE,
   lineHeight: 1.35,
   textAlign: "center",
-  whiteSpace: "nowrap",
+  maxWidth: "28ch",
   letterSpacing: "0.01em",
   fontWeight: 300,
 };
@@ -444,5 +443,5 @@ const fieldStyle: React.CSSProperties = {
   pointerEvents: "auto",
   fontSize: TEXT_SIZE,
   fontWeight: 300,
-  whiteSpace: "nowrap",
+  maxWidth: "28ch",
 };
