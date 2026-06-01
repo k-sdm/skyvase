@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { MEMORY_VIDEO_VERSION, PAIR_COUNT } from "@/components/memory-vase";
 import { VaseCarousel } from "@/components/vase-carousel";
@@ -160,31 +160,11 @@ export default function Home() {
   // the user ever clicks through to the vase page.
   const [pairIdx, setPairIdx] = useState<number | null>(null);
 
-  const dateRef = useRef<HTMLInputElement>(null);
-  const placeRef = useRef<HTMLInputElement>(null);
-  const advancedRef = useRef(false);
-
   useEffect(() => {
     setPairIdx(Math.floor(Math.random() * PAIR_COUNT));
   }, []);
 
   const parsedDate = useMemo(() => parseDateFlexible(dateInput), [dateInput]);
-
-  // Once a valid date is entered, move the caret to the location field — but
-  // only once, only while the date field is still focused, and only if the
-  // location field is still empty (so we never yank focus away from the user).
-  useEffect(() => {
-    if (advancedRef.current || parsedDate === null || placeInput.trim() !== "") {
-      return;
-    }
-    const timer = setTimeout(() => {
-      if (document.activeElement === dateRef.current && placeRef.current) {
-        placeRef.current.focus();
-        advancedRef.current = true;
-      }
-    }, 700);
-    return () => clearTimeout(timer);
-  }, [parsedDate, placeInput]);
 
   useEffect(() => {
     const query = placeInput.trim();
@@ -373,7 +353,6 @@ export default function Home() {
           </p>
 
           <input
-            ref={dateRef}
             className="memory-field"
             type="text"
             autoComplete="off"
@@ -386,7 +365,6 @@ export default function Home() {
           />
 
           <input
-            ref={placeRef}
             className="memory-field"
             type="text"
             autoComplete="off"
@@ -399,7 +377,7 @@ export default function Home() {
 
           <button
             type="button"
-            className="embed-memory-btn"
+            className={`embed-memory-btn${ready ? " is-active" : ""}`}
             onClick={goToVase}
             disabled={!ready}
             aria-label="embed memory"
