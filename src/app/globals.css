@@ -97,7 +97,7 @@ canvas.viewport-bleed {
 .site-footer__logo {
   display: inline-block;
   width: auto;
-  height: clamp(20px, 5vw, 26px);
+  height: clamp(30px, 7.5vw, 39px);
   opacity: 0.55;
   pointer-events: auto;
 }
@@ -113,19 +113,18 @@ input.memory-field {
   background: transparent;
   border: none;
   outline: none;
-  color: rgba(255, 255, 255, 0.55);
-  font-family: var(--font-kh-teka-italic), var(--font-kh-teka), system-ui, sans-serif;
-  font-style: italic;
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: inherit;
+  font-style: normal;
   text-align: center;
   width: 100%;
+  transition: color 0.3s ease;
 }
 
 input.memory-field::placeholder {
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.6);
   font-family: inherit;
-  font-style: italic;
+  font-style: normal;
 }
 
 input.memory-field:focus {
@@ -157,7 +156,7 @@ input.memory-field:focus {
   transition: opacity 0.4s ease;
 }
 
-/* Form incomplete: drop the glow, fade stroke + text to 60%. */
+/* Form incomplete: not clickable — drop the glow, fade stroke + text to 60%. */
 .embed-memory-btn:disabled {
   cursor: default;
   opacity: 0.6;

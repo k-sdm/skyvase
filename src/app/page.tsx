@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { MEMORY_VIDEO_VERSION, PAIR_COUNT } from "@/components/memory-vase";
 import { VaseCarousel } from "@/components/vase-carousel";
@@ -149,22 +149,6 @@ function formatDDMMYYYY(d: Date): string {
   return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
 }
 
-function ordinalSuffix(n: number): string {
-  const v = n % 100;
-  if (v >= 11 && v <= 13) return "th";
-  switch (n % 10) {
-    case 1: return "st";
-    case 2: return "nd";
-    case 3: return "rd";
-    default: return "th";
-  }
-}
-
-// Placeholder hint for the date field, e.g. "1st june 2026".
-function formatPlaceholderDate(d: Date): string {
-  return `${d.getDate()}${ordinalSuffix(d.getDate())} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
-}
-
 export default function Home() {
   const [dateInput, setDateInput] = useState("");
   const [placeInput, setPlaceInput] = useState("");
@@ -175,29 +159,32 @@ export default function Home() {
   // Pick the video/overlay pair on mount so we can preload the WebM before
   // the user ever clicks through to the vase page.
   const [pairIdx, setPairIdx] = useState<number | null>(null);
-  // Location-field placeholder: the visitor's IP-detected city, with a
-  // static fallback (only resolves on the deployed Vercel site).
-  const [placePlaceholder, setPlacePlaceholder] = useState("London, England");
 
-  const datePlaceholder = formatPlaceholderDate(new Date());
+  const dateRef = useRef<HTMLInputElement>(null);
+  const placeRef = useRef<HTMLInputElement>(null);
+  const advancedRef = useRef(false);
 
   useEffect(() => {
     setPairIdx(Math.floor(Math.random() * PAIR_COUNT));
   }, []);
 
-  useEffect(() => {
-    let active = true;
-    fetchHere()
-      .then((r) => {
-        if (active && r?.name) setPlacePlaceholder(r.name);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
-
   const parsedDate = useMemo(() => parseDateFlexible(dateInput), [dateInput]);
+
+  // Once a valid date is entered, move the caret to the location field — but
+  // only once, only while the date field is still focused, and only if the
+  // location field is still empty (so we never yank focus away from the user).
+  useEffect(() => {
+    if (advancedRef.current || parsedDate === null || placeInput.trim() !== "") {
+      return;
+    }
+    const timer = setTimeout(() => {
+      if (document.activeElement === dateRef.current && placeRef.current) {
+        placeRef.current.focus();
+        advancedRef.current = true;
+      }
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [parsedDate, placeInput]);
 
   useEffect(() => {
     const query = placeInput.trim();
@@ -375,7 +362,7 @@ export default function Home() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: "clamp(1.5rem, 5vw, 2.5rem)",
+            gap: "clamp(1.25rem, 4vw, 1.75rem)",
             padding: "clamp(1rem, 5vw, 2rem)",
             pointerEvents: "none",
             color: "#ffffff",
@@ -385,33 +372,30 @@ export default function Home() {
             think back to a moment that means something to you
           </p>
 
-          <div style={fieldGroupStyle}>
-            <p style={promptStyle}>when did it happen?</p>
-            <input
-              className="memory-field"
-              type="text"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder={datePlaceholder}
-              value={dateInput}
-              onChange={(e) => setDateInput(e.target.value)}
-              style={fieldStyle}
-            />
-          </div>
+          <input
+            ref={dateRef}
+            className="memory-field"
+            type="text"
+            autoComplete="off"
+            spellCheck={false}
+            autoFocus
+            placeholder="enter the date when it happened"
+            value={dateInput}
+            onChange={(e) => setDateInput(e.target.value)}
+            style={{ ...fieldStyle, color: parsedDate ? "#ffffff" : undefined }}
+          />
 
-          <div style={fieldGroupStyle}>
-            <p style={promptStyle}>and where were you in the world?</p>
-            <input
-              className="memory-field"
-              type="text"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder={placePlaceholder}
-              value={placeInput}
-              onChange={(e) => setPlaceInput(e.target.value)}
-              style={fieldStyle}
-            />
-          </div>
+          <input
+            ref={placeRef}
+            className="memory-field"
+            type="text"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="and the city you were in"
+            value={placeInput}
+            onChange={(e) => setPlaceInput(e.target.value)}
+            style={{ ...fieldStyle, color: resolved ? "#ffffff" : undefined }}
+          />
 
           <button
             type="button"
@@ -462,29 +446,25 @@ const inlineLinkStyle: React.CSSProperties = {
   lineHeight: "inherit",
 };
 
+// Shared text size — scales with viewport width so the longest prompt
+// ("think back to a moment that means something to you") fits on one line
+// down to phone widths, while capping at 1.6rem on desktop.
+const TEXT_SIZE = "clamp(0.7rem, 2.8vw, 1.6rem)";
+
 // Bright, non-italic prompt text — the questions the visitor reads.
+// Kept on a single line (no wrap).
 const promptStyle: React.CSSProperties = {
-  fontSize: "clamp(1.15rem, 4.5vw, 1.6rem)",
+  fontSize: TEXT_SIZE,
   lineHeight: 1.35,
   textAlign: "center",
-  maxWidth: "28ch",
+  whiteSpace: "nowrap",
   letterSpacing: "0.01em",
   fontWeight: 300,
 };
 
-// Stacks a prompt directly above its input on its own line.
-const fieldGroupStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  gap: "0.5rem",
-  width: "100%",
-  maxWidth: "28ch",
-};
-
 const fieldStyle: React.CSSProperties = {
   pointerEvents: "auto",
-  fontSize: "clamp(1.15rem, 4.5vw, 1.6rem)",
+  fontSize: TEXT_SIZE,
   fontWeight: 300,
-  maxWidth: "28ch",
+  whiteSpace: "nowrap",
 };
