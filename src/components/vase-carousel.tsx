@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MemoryVase } from "@/components/memory-vase";
 
 const SOURCE_WIDTH = 1080;
@@ -8,11 +8,13 @@ const SOURCE_HEIGHT = 1350;
 
 // Slide 0 is the personalised vase (MemoryVase). Slides 1..N pull from
 // /public/videos/carousel{n}.webm as plain looping background videos.
-const CAROUSEL_VIDEOS = ["carousel1", "carousel2", "carousel3"] as const;
+const CAROUSEL_VIDEOS = ["carousel3", "carousel2", "carousel1"] as const;
 /** Bump when carousel .webm files change — busts CDN/browser cache on same paths. */
 const CAROUSEL_VIDEO_VERSION = "2";
 const TOTAL_SLIDES = 1 + CAROUSEL_VIDEOS.length;
 const FADE_MS = 250;
+// Minimum horizontal travel (px) to count a touch as a swipe rather than a tap.
+const SWIPE_THRESHOLD = 40;
 
 export interface VaseCarouselProps {
   date: Date;
@@ -22,12 +24,31 @@ export interface VaseCarouselProps {
 
 export function VaseCarousel({ date, lat, pairIdx }: VaseCarouselProps) {
   const [index, setIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
 
   const goNext = () => setIndex((i) => (i + 1) % TOTAL_SLIDES);
   const goPrev = () => setIndex((i) => (i - 1 + TOTAL_SLIDES) % TOTAL_SLIDES);
 
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    const start = touchStartX.current;
+    touchStartX.current = null;
+    if (start === null) return;
+    const dx = e.changedTouches[0].clientX - start;
+    if (Math.abs(dx) < SWIPE_THRESHOLD) return; // a tap, not a swipe
+    if (dx < 0) goNext();
+    else goPrev();
+  }
+
   return (
-    <div className="vase-carousel">
+    <div
+      className="vase-carousel"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       {/* Slide 0 — personalised vase + gradient overlay */}
       <div
         style={{

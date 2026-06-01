@@ -317,7 +317,7 @@ export default function Home() {
                 letterSpacing: "0.01em",
               }}
             >
-              your personal titanium vase anodised with the sky of{" "}
+              titanium vase anodised with the sky of{" "}
               <button
                 type="button"
                 onClick={backToSky}
