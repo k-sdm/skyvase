@@ -427,7 +427,7 @@ const inlineLinkStyle: React.CSSProperties = {
 // Shared text size — scales with viewport width so the longest prompt
 // ("think back to a moment that means something to you") fits on one line
 // down to phone widths, while capping at 1.6rem on desktop.
-const TEXT_SIZE = "clamp(0.7rem, 2.8vw, 1.6rem)";
+const TEXT_SIZE = "clamp(0.5rem, 2.5vw, 1.6rem)";
 
 // Bright, non-italic prompt text — the questions the visitor reads.
 // Kept on a single line (no wrap).

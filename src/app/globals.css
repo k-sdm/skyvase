@@ -112,12 +112,18 @@ canvas.viewport-bleed {
 input.memory-field {
   background: transparent;
   border: none;
+  /* Fixed-length underline: tied to the (fixed) field width, so it does NOT
+     grow or shrink with the typed/placeholder text. currentColor lets it
+     brighten in step with the text when the value is valid. */
+  border-bottom: 1px solid currentColor;
   outline: none;
   color: rgba(255, 255, 255, 0.6);
+  caret-color: #ffffff;
   font-family: inherit;
   font-style: normal;
   text-align: center;
-  width: 100%;
+  width: min(90vw, 34rem);
+  padding-bottom: 0.35rem;
   transition: color 0.3s ease;
 }
 
