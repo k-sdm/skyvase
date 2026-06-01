@@ -64,8 +64,18 @@ body {
   background: var(--page-chrome, #ffffff);
 }
 
+/* Full-bleed shader canvas: fills the entire screen including the iOS
+   status-bar / home-indicator regions (paired with viewport-fit: cover). */
 canvas.viewport-bleed {
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh; /* fallback */
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   z-index: 1;
+  touch-action: none;
 }
 
 /* 4:5 frame — flex-shrink: 0 stops the vase page column from squashing it on resize */

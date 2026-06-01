@@ -203,61 +203,6 @@ const CLOUDS = {
   elevation: 0.45,
 };
 
-function isMobileSafari() {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent;
-  return /iPhone|iPad|iPod/i.test(ua) && /Safari/i.test(ua) && !/CriOS|FxiOS/i.test(ua);
-}
-
-function readCanvasSize(canvas: HTMLCanvasElement) {
-  const vv = window.visualViewport;
-  if (vv && isMobileSafari()) {
-    return {
-      width: Math.round(vv.width),
-      height: Math.round(vv.height),
-      offsetTop: vv.offsetTop,
-      offsetLeft: vv.offsetLeft,
-      useVisualViewport: true as const,
-    };
-  }
-  const rect = canvas.getBoundingClientRect();
-  const w = Math.round(rect.width);
-  const h = Math.round(rect.height);
-  if (w > 0 && h > 0) {
-    return { width: w, height: h, offsetTop: 0, offsetLeft: 0, useVisualViewport: false as const };
-  }
-  return {
-    width: Math.round(vv?.width ?? window.innerWidth),
-    height: Math.round(vv?.height ?? window.innerHeight),
-    offsetTop: vv?.offsetTop ?? 0,
-    offsetLeft: vv?.offsetLeft ?? 0,
-    useVisualViewport: false as const,
-  };
-}
-
-function applyCanvasLayout(
-  canvas: HTMLCanvasElement,
-  layout: ReturnType<typeof readCanvasSize>
-) {
-  if (layout.useVisualViewport) {
-    canvas.style.position = "fixed";
-    canvas.style.top = `${layout.offsetTop}px`;
-    canvas.style.left = `${layout.offsetLeft}px`;
-    canvas.style.width = `${layout.width}px`;
-    canvas.style.height = `${layout.height}px`;
-    canvas.style.right = "auto";
-    canvas.style.bottom = "auto";
-  } else {
-    canvas.style.position = "";
-    canvas.style.top = "";
-    canvas.style.left = "";
-    canvas.style.width = "";
-    canvas.style.height = "";
-    canvas.style.right = "";
-    canvas.style.bottom = "";
-  }
-}
-
 export function SkyShader() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -350,11 +295,14 @@ export function SkyShader() {
     animate();
 
     function onResize() {
-      const layout = readCanvasSize(canvas);
-      applyCanvasLayout(canvas, layout);
-      camera.aspect = layout.width / layout.height;
+      // CSS sizes the canvas to 100vw x 100dvh (viewport-fit: cover), so read
+      // its actual pixels and match the drawing buffer. `false` keeps three.js
+      // from overwriting the CSS-driven element size.
+      const w = canvas.clientWidth || window.innerWidth;
+      const h = canvas.clientHeight || window.innerHeight;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(layout.width, layout.height, false);
+      renderer.setSize(w, h, false);
     }
     onResize();
 
