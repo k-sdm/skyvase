@@ -372,7 +372,6 @@ export default function Home() {
               type="text"
               autoComplete="off"
               spellCheck={false}
-              autoFocus
               placeholder={showDateCaret ? "" : DATE_PLACEHOLDER}
               value={dateInput}
               onChange={(e) => setDateInput(e.target.value)}
@@ -477,19 +476,20 @@ const fieldStyle: React.CSSProperties = {
   pointerEvents: "auto",
   fontSize: TEXT_SIZE,
   fontWeight: 300,
-  maxWidth: "28ch",
 };
 
 const DATE_PLACEHOLDER = "enter the date when it happened";
 const PLACE_PLACEHOLDER = "and the city you were in";
 
-// Relative box so the fake-caret overlay can sit on top of the input.
+// Relative box for the fake-caret overlay. fontSize is set here so the `ch`
+// width (and the overlay) resolve at the text size — wide enough for the
+// longest placeholder to sit on one line, capped to the viewport on mobile.
 const fieldWrapStyle: React.CSSProperties = {
   position: "relative",
   display: "flex",
   justifyContent: "center",
-  width: "100%",
-  maxWidth: "28ch",
+  fontSize: TEXT_SIZE,
+  width: "min(92vw, 32ch)",
 };
 
 const caretOverlayStyle: React.CSSProperties = {

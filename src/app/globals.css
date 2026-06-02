@@ -151,6 +151,7 @@ input.memory-field:focus {
   align-items: center;
   justify-content: center;
   gap: 0.1em;
+  white-space: nowrap;
   pointer-events: none;
   color: rgba(255, 255, 255, 0.6);
   font-family: inherit;
