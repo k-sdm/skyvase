@@ -160,6 +160,7 @@ export default function Home() {
   // autofocus, so we render a fake blinking caret in the pending field whenever
   // nothing is focused.
   const [focusedField, setFocusedField] = useState<null | "date" | "place">(null);
+  const [soldOut, setSoldOut] = useState(false);
   // Pick the video/overlay pair on mount so we can preload the WebM before
   // the user ever clicks through to the vase page.
   const [pairIdx, setPairIdx] = useState<number | null>(null);
@@ -200,6 +201,21 @@ export default function Home() {
     applyPageChrome();
   }, []);
 
+  // Check edition availability when the vase view opens.
+  useEffect(() => {
+    if (!vaseMode) return;
+    let active = true;
+    fetch("/api/checkout")
+      .then((r) => r.json())
+      .then((d) => {
+        if (active) setSoldOut(!!d.soldOut);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [vaseMode]);
+
   const ready = parsedDate !== null && resolved !== null;
 
   // Fake caret cue: sits in the date field until a date parses, then the
@@ -228,7 +244,7 @@ export default function Home() {
     : "";
 
   async function handlePurchase() {
-    if (!parsedDate || !resolved || purchasing) return;
+    if (!parsedDate || !resolved || purchasing || soldOut) return;
     setPurchasing(true);
     try {
       const res = await fetch("/api/checkout", {
@@ -241,6 +257,11 @@ export default function Home() {
         }),
       });
       const data = await res.json();
+      if (res.status === 409 || data.error === "sold_out") {
+        setSoldOut(true);
+        setPurchasing(false);
+        return;
+      }
       if (data.url) {
         window.location.href = data.url;
         return;
@@ -341,7 +362,7 @@ export default function Home() {
             <button
               type="button"
               onClick={handlePurchase}
-              disabled={purchasing}
+              disabled={purchasing || soldOut}
               style={{
                 background: "transparent",
                 color: "#18181b",
@@ -352,12 +373,12 @@ export default function Home() {
                 fontSize: "clamp(0.95rem, 3.2vw, 1.05rem)",
                 fontWeight: 300,
                 letterSpacing: "0.01em",
-                cursor: purchasing ? "default" : "pointer",
-                opacity: purchasing ? 0.6 : 1,
+                cursor: purchasing || soldOut ? "default" : "pointer",
+                opacity: purchasing || soldOut ? 0.6 : 1,
                 transition: "opacity 0.2s ease",
               }}
             >
-              {purchasing ? "redirecting\u2026" : "purchase"}
+              {soldOut ? "sold out" : purchasing ? "redirecting\u2026" : "purchase"}
             </button>
           </>
         )}

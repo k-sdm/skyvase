@@ -13,6 +13,7 @@ export const PRODUCT = {
   dimensions: "200mm × 80mm",
   material: "Grade 2 Titanium",
   process: "Electrochemical anodisation",
+  editionSize: 50,
 };
 
 export const VOLTAGE_COLOURS = [
