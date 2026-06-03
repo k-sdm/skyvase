@@ -322,6 +322,20 @@ export default function Home() {
               </button>
             </p>
 
+            <p
+              style={{
+                fontSize: "clamp(0.8rem, 2.8vw, 0.9rem)",
+                color: "rgba(24, 24, 27, 0.6)",
+                textAlign: "center",
+                maxWidth: "36ch",
+                lineHeight: 1.5,
+                fontWeight: 300,
+                letterSpacing: "0.01em",
+              }}
+            >
+              Limited edition of 50, please allow up to 6 weeks before shipping
+            </p>
+
             <button
               type="button"
               onClick={handlePurchase}
