@@ -324,11 +324,13 @@ export default function Home() {
 
             <p
               style={{
-                fontSize: "clamp(0.8rem, 2.8vw, 0.9rem)",
-                color: "rgba(24, 24, 27, 0.6)",
+                // Matches the description colour and (desktop) size; scales down
+                // on narrow phones so the line never wraps or overflows.
+                fontSize: "clamp(0.55rem, 2.5vw, 1.05rem)",
+                color: "#18181b",
                 textAlign: "center",
-                maxWidth: "36ch",
-                lineHeight: 1.5,
+                whiteSpace: "nowrap",
+                lineHeight: 1.55,
                 fontWeight: 300,
                 letterSpacing: "0.01em",
               }}
