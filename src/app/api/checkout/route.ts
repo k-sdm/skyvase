@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
+    // Present/charge in the buyer's local currency, converted from the GBP
+    // base. Requires Adaptive Pricing to be enabled on the Stripe account.
+    adaptive_pricing: { enabled: true },
     line_items: [
       {
         price_data: {

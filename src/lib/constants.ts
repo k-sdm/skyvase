@@ -5,8 +5,11 @@ export const PRODUCT = {
     "A 200mm titanium vase with a colour gradient uniquely encoding a date and location. " +
     "The gradient maps daylight hours to anodisation zones — shorter days produce deeper blues, " +
     "longer days reveal golds and teals. Each piece is one-of-one.",
+  // Base price 300.00 GBP. Stripe Adaptive Pricing converts this to the
+  // buyer's local currency at checkout (enable Adaptive Pricing in the
+  // Stripe Dashboard: Settings → Payments).
   priceAmount: 30000,
-  currency: "usd",
+  currency: "gbp",
   dimensions: "200mm × 80mm",
   material: "Grade 2 Titanium",
   process: "Electrochemical anodisation",
