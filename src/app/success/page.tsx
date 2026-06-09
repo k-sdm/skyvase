@@ -64,25 +64,23 @@ export default function SuccessPage() {
         }}
       >
         thank you for your order. you&apos;ll receive a confirmation email
-        shortly with your unique gradient profile and an estimated delivery
-        date.
+        shortly with an estimated delivery date.
       </p>
 
       <Link
         href="/"
         style={{
           marginTop: "clamp(0.5rem, 2vw, 1rem)",
-          background: "#000",
-          color: "#fff",
-          border: "none",
+          background: "#fff",
+          color: "#18181b",
+          border: "1px solid #000",
           borderRadius: "9999px",
-          padding: "0.85rem 2rem",
+          padding: "0.95rem 2rem",
           fontFamily: "inherit",
-          fontSize: "clamp(0.9rem, 3vw, 1rem)",
+          fontSize: "clamp(0.95rem, 3.2vw, 1.05rem)",
           fontWeight: 300,
           letterSpacing: "0.01em",
           textDecoration: "none",
-          width: "clamp(180px, 55vw, 220px)",
           textAlign: "center",
         }}
       >
