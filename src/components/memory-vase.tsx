@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { buildVaseGradientStops } from "@/components/vase-preview";
 import {
   radialStopOffsetPercent,
@@ -16,6 +16,15 @@ export const PAIR_COUNT = 3;
 
 /** Bump when 1/2/3.webm change — busts CDN/browser cache on the same paths. */
 export const MEMORY_VIDEO_VERSION = "2";
+
+// Vase fade-in from white once it's fully composed.
+const REVEAL_MS = 700;
+// Colours rising from the bottom into their final positions.
+const GRADIENT_RISE_MS = 1500;
+// Safety net so a stalled asset never leaves the vase hidden.
+const READY_TIMEOUT_MS = 1600;
+
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
 const SVG_STYLE: React.CSSProperties = {
   display: "block",
@@ -52,7 +61,12 @@ export interface MemoryVaseProps {
 
 export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
   const [canPlayWebM, setCanPlayWebM] = useState<boolean | null>(null);
-  const stops = buildVaseGradientStops(date, lat);
+  const [mediaReady, setMediaReady] = useState(false);
+  const [assetsReady, setAssetsReady] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const finalStops = useMemo(() => buildVaseGradientStops(date, lat), [date, lat]);
   const maskId = `memory-vase-mask-${pairIdx}`;
   const gradientId = `memory-vase-gradient-${pairIdx}`;
   const overlayUrl = overlayAssetUrl(pairIdx);
@@ -61,6 +75,54 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
     const v = document.createElement("video");
     setCanPlayWebM(v.canPlayType("video/webm") !== "");
   }, []);
+
+  // Preload the vase shape mask + glow so the coloured layer is composited the
+  // moment the vase appears — never a frame of the un-coloured (bare) vase.
+  useEffect(() => {
+    let loaded = 0;
+    const onOne = () => {
+      loaded += 1;
+      if (loaded >= 2) setAssetsReady(true);
+    };
+    const shape = new Image();
+    shape.onload = onOne;
+    shape.onerror = onOne;
+    shape.src = overlayUrl;
+    const glow = new Image();
+    glow.onload = onOne;
+    glow.onerror = onOne;
+    glow.src = "/GLOW.svg";
+  }, [overlayUrl]);
+
+  useEffect(() => {
+    const id = setTimeout(() => setTimedOut(true), READY_TIMEOUT_MS);
+    return () => clearTimeout(id);
+  }, []);
+
+  const ready = (mediaReady && assetsReady) || timedOut;
+
+  // Once fully composed, ease the colours up from the bottom into their final
+  // positions (the fade-in from white is driven by `ready` on the container).
+  useEffect(() => {
+    if (!ready) return;
+    let raf = 0;
+    let start = 0;
+    const tick = (now: number) => {
+      if (!start) start = now;
+      const p = Math.min(1, (now - start) / GRADIENT_RISE_MS);
+      setProgress(p);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [ready]);
+
+  // Start fully blue (every colour collapsed to the bottom) and let the warm
+  // colours rise to their final offsets as `progress` eases to 1.
+  const eased = easeOutCubic(progress);
+  const stops = finalStops.map((s, i) =>
+    i === 0 ? s : { color: s.color, offset: 1 - (1 - s.offset) * eased }
+  );
 
   const oneBased = pairIdx + 1;
 
@@ -73,6 +135,8 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
         overflow: "hidden",
         background: "#000",
         isolation: "isolate",
+        opacity: ready ? 1 : 0,
+        transition: `opacity ${REVEAL_MS}ms ease`,
       }}
     >
       {canPlayWebM !== false && (
@@ -86,6 +150,7 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
           muted
           playsInline
           preload="auto"
+          onLoadedData={() => setMediaReady(true)}
           style={MEDIA_STYLE}
         />
       )}
@@ -95,6 +160,7 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
           className="memory-vase__fallback"
           src={`/videos/${oneBased}.jpg`}
           alt=""
+          onLoad={() => setMediaReady(true)}
           style={MEDIA_STYLE}
         />
       )}
