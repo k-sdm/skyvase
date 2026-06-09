@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
           product_data: {
             name: PRODUCT.name,
             description,
+            images: [`${process.env.NEXT_PUBLIC_BASE_URL}/vase.png`],
           },
         },
         quantity: 1,
