@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { sendOrderEmails } from "@/lib/order-email";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -31,7 +32,12 @@ export async function POST(req: NextRequest) {
         location: session.metadata?.location,
         email: session.customer_details?.email,
       });
-      // TODO: persist order, trigger fulfilment email, queue anodisation job
+      // Confirmation to the customer + alert to the seller. Awaited so the
+      // serverless function doesn't terminate before the sends finish; never
+      // throws, so a mail failure can't turn this into a non-200 (which would
+      // make Stripe retry and double-send).
+      await sendOrderEmails(session);
+      // TODO: persist order, queue anodisation job
       break;
     }
     default:
