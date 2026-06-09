@@ -194,12 +194,6 @@ const WIGGLE = {
   ease: 0.06,    // smoothing toward target per frame (~60fps)
 };
 
-// Sun position. On load the sun rises from below the horizon to its rest.
-const SUN_AZIMUTH_DEG = 180;   // due south — in front of the camera
-const SUN_ELEVATION_DEG = 2.3; // resting elevation above the horizon
-const SUN_RISE_FROM_DEG = -6;  // starts below the horizon
-const SUN_RISE_SEC = 2.6;      // rise duration
-
 // Cloud appearance — tune to taste.
 const CLOUDS = {
   scale: 0.0002,
@@ -283,30 +277,19 @@ export function SkyShader() {
     scene.add(new THREE.Mesh(skyGeo, skyMat));
 
     const sun = new THREE.Vector3();
-    const sunTheta = THREE.MathUtils.degToRad(SUN_AZIMUTH_DEG);
-    function setSunElevation(deg: number) {
-      sun.setFromSphericalCoords(1, THREE.MathUtils.degToRad(90 - deg), sunTheta);
-      skyMat.uniforms.sunPosition.value.copy(sun);
-    }
-    setSunElevation(SUN_RISE_FROM_DEG); // start below the horizon
+    const phi = THREE.MathUtils.degToRad(90 - 2.3);
+    const theta = THREE.MathUtils.degToRad(180);
+    sun.setFromSphericalCoords(1, phi, theta);
+    skyMat.uniforms.sunPosition.value.copy(sun);
 
     const clock = new THREE.Clock();
     let animId: number;
     function animate() {
       animId = requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime();
-
-      // Sun rises from below the horizon to its resting elevation on load.
-      const riseT = Math.min(1, elapsed / SUN_RISE_SEC);
-      const easedRise = 1 - Math.pow(1 - riseT, 3);
-      setSunElevation(
-        SUN_RISE_FROM_DEG + (SUN_ELEVATION_DEG - SUN_RISE_FROM_DEG) * easedRise
-      );
-
       current.x += (target.x - current.x) * WIGGLE.ease;
       current.y += (target.y - current.y) * WIGGLE.ease;
       applyLook(current.x, current.y);
-      skyMat.uniforms.time.value = elapsed;
+      skyMat.uniforms.time.value = clock.getElapsedTime();
       renderer.render(scene, camera);
     }
     animate();
