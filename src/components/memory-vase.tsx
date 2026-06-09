@@ -133,7 +133,7 @@ export function MemoryVase({ date, lat, pairIdx }: MemoryVaseProps) {
         position: "absolute",
         inset: 0,
         overflow: "hidden",
-        background: "#000",
+        background: "#fff",
         isolation: "isolate",
         opacity: ready ? 1 : 0,
         transition: `opacity ${REVEAL_MS}ms ease`,
