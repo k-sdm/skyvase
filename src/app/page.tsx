@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { MEMORY_VIDEO_VERSION, PAIR_COUNT } from "@/components/memory-vase";
 import { VaseCarousel } from "@/components/vase-carousel";
@@ -161,6 +161,9 @@ export default function Home() {
   // nothing is focused.
   const [focusedField, setFocusedField] = useState<null | "date" | "place">(null);
   const [soldOut, setSoldOut] = useState(false);
+
+  const dateRef = useRef<HTMLInputElement>(null);
+  const placeRef = useRef<HTMLInputElement>(null);
   // Pick the video/overlay pair on mount so we can preload the WebM before
   // the user ever clicks through to the vase page.
   const [pairIdx, setPairIdx] = useState<number | null>(null);
@@ -215,6 +218,23 @@ export default function Home() {
       active = false;
     };
   }, [vaseMode]);
+
+  // Type-to-focus: on a physical keyboard, the first printable keypress drops
+  // the caret into the field it's pointing at (date, then location once the
+  // date parses) without needing a click. The fake caret stays as the cue
+  // until typing begins, then the real caret takes over.
+  useEffect(() => {
+    if (vaseMode) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
+      const active = document.activeElement;
+      if (active && active !== document.body) return; // already focused somewhere
+      const target = parsedDate === null ? dateRef.current : resolved === null ? placeRef.current : null;
+      target?.focus();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [vaseMode, parsedDate, resolved]);
 
   const ready = parsedDate !== null && resolved !== null;
 
@@ -403,6 +423,7 @@ export default function Home() {
 
           <div style={fieldWrapStyle}>
             <input
+              ref={dateRef}
               className="memory-field"
               type="text"
               autoComplete="off"
@@ -424,6 +445,7 @@ export default function Home() {
 
           <div style={fieldWrapStyle}>
             <input
+              ref={placeRef}
               className="memory-field"
               type="text"
               autoComplete="off"
