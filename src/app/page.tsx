@@ -399,9 +399,7 @@ export default function Home() {
             color: "#ffffff",
           }}
         >
-          <p style={promptStyle}>
-            think back to a moment that means something to you
-          </p>
+          <p style={promptStyle}>think of a memory</p>
 
           <div style={fieldWrapStyle}>
             <input
@@ -450,7 +448,7 @@ export default function Home() {
             className={`embed-memory-btn${ready ? " is-active" : ""}`}
             onClick={goToVase}
             disabled={!ready}
-            aria-label="embed memory"
+            aria-label="continue"
             style={{ pointerEvents: "auto" }}
           >
             <span className="embed-memory-btn__glow" aria-hidden>
@@ -458,7 +456,7 @@ export default function Home() {
               <span className="embed-memory-btn__glow-stroke embed-memory-btn__glow-stroke--blur" />
             </span>
             <span className="embed-memory-btn__stroke-sharp" aria-hidden />
-            embed memory
+            continue
           </button>
         </main>
       )}
