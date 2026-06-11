@@ -149,7 +149,7 @@ function formatDDMMYYYY(d: Date): string {
   return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
 }
 
-export default function Home() {
+function Store() {
   const [dateInput, setDateInput] = useState("");
   const [placeInput, setPlaceInput] = useState("");
   const [resolved, setResolved] = useState<GeocodingResult | null>(null);
@@ -553,3 +553,22 @@ const caretOverlayStyle: React.CSSProperties = {
   fontSize: TEXT_SIZE,
   fontWeight: 300,
 };
+
+// Locked teaser: just the sky shader, no store. Selected per deployment via the
+// NEXT_PUBLIC_SITE_MODE env var (set it to "teaser"; anything else = full store).
+function Teaser() {
+  useEffect(() => {
+    applyPageChrome();
+  }, []);
+  return (
+    <>
+      <div className="viewport-bleed sky-backdrop" aria-hidden />
+      <SkyShader />
+    </>
+  );
+}
+
+export default function Page() {
+  if (process.env.NEXT_PUBLIC_SITE_MODE === "teaser") return <Teaser />;
+  return <Store />;
+}
