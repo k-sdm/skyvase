@@ -239,7 +239,7 @@ input.memory-field:focus {
 
 /* ---- Calendar date picker (monochrome white, over the sky) ---- */
 .cal {
-  width: min(92vw, 20rem);
+  width: min(92vw, 28rem);
   color: #ffffff;
   pointer-events: auto;
   user-select: none;
@@ -248,26 +248,38 @@ input.memory-field:focus {
 .cal__head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 0.5rem;
   margin-bottom: 0.6rem;
 }
-.cal__title {
-  font-size: clamp(1rem, 3.5vw, 1.15rem);
-  letter-spacing: 0.02em;
-}
-.cal__nav {
+.cal__select,
+.cal__year {
   background: transparent;
   border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
   color: #ffffff;
-  font-size: 1.4rem;
-  line-height: 1;
+  font-family: inherit;
+  font-size: clamp(1rem, 3.5vw, 1.15rem);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 0.1rem 0.2rem;
   cursor: pointer;
-  padding: 0.2rem 0.7rem;
-  opacity: 0.7;
-  transition: opacity 0.15s ease;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
-.cal__nav:hover {
-  opacity: 1;
+.cal__select option {
+  color: #18181b; /* native dropdown list renders on a light background */
+}
+.cal__year {
+  width: 5ch;
+  -moz-appearance: textfield;
+}
+.cal__year::-webkit-inner-spin-button,
+.cal__year::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .cal__grid {
   display: grid;
@@ -317,7 +329,7 @@ input.memory-field:focus {
 /* ---- World map location picker (monochrome white line art) ---- */
 .map-picker {
   position: relative;
-  width: min(92vw, 34rem);
+  width: min(92vw, 28rem);
   aspect-ratio: 2 / 1;
   cursor: crosshair;
   pointer-events: auto;
@@ -329,11 +341,9 @@ input.memory-field:focus {
   height: 100%;
 }
 .map-picker__land {
-  fill: rgba(255, 255, 255, 0.16);
+  fill: rgba(255, 255, 255, 0.9);
   fill-rule: evenodd;
-  stroke: rgba(255, 255, 255, 0.4);
-  stroke-width: 0.5;
-  vector-effect: non-scaling-stroke;
+  stroke: none;
 }
 .map-picker__pin {
   position: absolute;

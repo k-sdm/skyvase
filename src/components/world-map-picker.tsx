@@ -89,10 +89,11 @@ export function WorldMapPicker({ value, onSelect }: WorldMapPickerProps) {
     };
   }, []);
 
-  const paths = useMemo(
-    () => (data ? data.features.map((f) => featurePath(f)) : []),
+  const features = useMemo(
+    () => (data ? data.features.filter((f) => f.n !== "Antarctica") : []),
     [data]
   );
+  const paths = useMemo(() => features.map((f) => featurePath(f)), [features]);
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     if (!data) return;
@@ -101,7 +102,7 @@ export function WorldMapPicker({ value, onSelect }: WorldMapPickerProps) {
     const py = (e.clientY - rect.top) / rect.height;
     const lng = px * 360 - 180;
     const lat = 90 - py * 180;
-    onSelect({ lat, lng, name: countryAt(lng, lat, data.features) });
+    onSelect({ lat, lng, name: countryAt(lng, lat, features) });
   }
 
   return (
