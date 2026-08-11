@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface MapSelection {
   lat: number;
@@ -15,26 +15,13 @@ interface Feature {
   t: "Polygon" | "MultiPolygon";
   c: PolygonCoords | PolygonCoords[];
 }
-interface WorldData {
-  features: Feature[];
-}
 
-// Equirectangular projection into a 360 x 180 viewBox (0,0 = top-left = -180,90).
-const proj = (lng: number, lat: number): [number, number] => [lng + 180, 90 - lat];
-
-function ringPath(ring: Ring): string {
-  let d = "";
-  for (let i = 0; i < ring.length; i++) {
-    const [x, y] = proj(ring[i][0], ring[i][1]);
-    d += `${i === 0 ? "M" : "L"}${x} ${y}`;
-  }
-  return d + "Z";
-}
-
-function featurePath(f: Feature): string {
-  if (f.t === "Polygon") return (f.c as PolygonCoords).map(ringPath).join("");
-  return (f.c as PolygonCoords[]).map((poly) => poly.map(ringPath).join("")).join("");
-}
+// Geographic bounds of /map.svg. It spans the full longitude and is cropped
+// vertically (no Antarctica). If picks land off, tune LAT_TOP / LAT_BOTTOM.
+const LON_MIN = -180;
+const LON_MAX = 180;
+const LAT_TOP = 83.6;
+const LAT_BOTTOM = -58.2;
 
 // Ray-casting point-in-ring; even–odd count across a polygon's rings handles holes.
 function ringContains(lng: number, lat: number, ring: Ring): boolean {
@@ -74,14 +61,15 @@ export interface WorldMapPickerProps {
 }
 
 export function WorldMapPicker({ value, onSelect }: WorldMapPickerProps) {
-  const [data, setData] = useState<WorldData | null>(null);
+  // Country geometry, only used to name the picked point (not rendered).
+  const [features, setFeatures] = useState<Feature[]>([]);
 
   useEffect(() => {
     let active = true;
     fetch("/world.min.json")
       .then((r) => r.json())
-      .then((d: WorldData) => {
-        if (active) setData(d);
+      .then((d: { features: Feature[] }) => {
+        if (active) setFeatures(d.features.filter((f) => f.n !== "Antarctica"));
       })
       .catch(() => {});
     return () => {
@@ -89,44 +77,32 @@ export function WorldMapPicker({ value, onSelect }: WorldMapPickerProps) {
     };
   }, []);
 
-  const features = useMemo(
-    () => (data ? data.features.filter((f) => f.n !== "Antarctica") : []),
-    [data]
-  );
-  const paths = useMemo(() => features.map((f) => featurePath(f)), [features]);
-
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (!data) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width;
-    const py = (e.clientY - rect.top) / rect.height;
-    const lng = px * 360 - 180;
-    const lat = 90 - py * 180;
+    const fx = (e.clientX - rect.left) / rect.width;
+    const fy = (e.clientY - rect.top) / rect.height;
+    const lng = LON_MIN + fx * (LON_MAX - LON_MIN);
+    const lat = LAT_TOP - fy * (LAT_TOP - LAT_BOTTOM);
     onSelect({ lat, lng, name: countryAt(lng, lat, features) });
   }
+
+  const crossX = value ? ((value.lng - LON_MIN) / (LON_MAX - LON_MIN)) * 100 : 0;
+  const crossY = value ? ((LAT_TOP - value.lat) / (LAT_TOP - LAT_BOTTOM)) * 100 : 0;
 
   return (
     <div
       className="map-picker"
       onClick={handleClick}
-      style={{ opacity: data ? 1 : 0, transition: "opacity 0.5s ease" }}
       role="button"
       aria-label="pick a location on the world map"
     >
-      <svg viewBox="0 0 360 180" preserveAspectRatio="none" className="map-picker__svg">
-        {paths.map((d, i) => (
-          <path key={i} d={d} className="map-picker__land" />
-        ))}
-      </svg>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/map.svg" alt="" className="map-picker__img" draggable={false} />
       {value && (
-        <span
-          className="map-picker__pin"
-          style={{
-            left: `${((value.lng + 180) / 360) * 100}%`,
-            top: `${((90 - value.lat) / 180) * 100}%`,
-          }}
-          aria-hidden
-        />
+        <>
+          <span className="map-picker__cross-v" style={{ left: `${crossX}%` }} aria-hidden />
+          <span className="map-picker__cross-h" style={{ top: `${crossY}%` }} aria-hidden />
+        </>
       )}
     </div>
   );

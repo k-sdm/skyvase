@@ -6,7 +6,10 @@ const MONTHS = [
   "january", "february", "march", "april", "may", "june",
   "july", "august", "september", "october", "november", "december",
 ];
-const WEEKDAYS = ["mo", "tu", "we", "th", "fr", "sa", "su"]; // Monday-first
+
+// Selectable year list (recent first).
+const NOW_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: NOW_YEAR + 1 - 1920 + 1 }, (_, i) => NOW_YEAR + 1 - i);
 
 // Always render six weeks so the grid height never changes between months.
 const CELL_COUNT = 42;
@@ -27,6 +30,7 @@ function sameDay(a: Date, b: Date): boolean {
     a.getDate() === b.getDate()
   );
 }
+
 
 export interface CalendarProps {
   value: Date | null;
@@ -60,27 +64,18 @@ export function Calendar({ value, onSelect }: CalendarProps) {
             </option>
           ))}
         </select>
-        <input
-          className="cal__year"
-          type="number"
-          inputMode="numeric"
+        <select
+          className="cal__select"
           value={view.year}
-          min={1900}
-          max={2100}
-          onChange={(e) => {
-            const y = parseInt(e.target.value, 10);
-            if (!Number.isNaN(y)) setView((v) => ({ ...v, year: y }));
-          }}
+          onChange={(e) => setView((v) => ({ ...v, year: Number(e.target.value) }))}
           aria-label="year"
-        />
-      </div>
-
-      <div className="cal__grid cal__weekdays" aria-hidden>
-        {WEEKDAYS.map((d) => (
-          <span key={d} className="cal__weekday">
-            {d}
-          </span>
-        ))}
+        >
+          {YEARS.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="cal__grid">
@@ -88,14 +83,11 @@ export function Calendar({ value, onSelect }: CalendarProps) {
           if (day === null) return <span key={i} className="cal__day cal__day--empty" />;
           const date = new Date(view.year, view.month, day);
           const selected = value ? sameDay(date, value) : false;
-          const isToday = sameDay(date, today);
           return (
             <button
               key={i}
               type="button"
-              className={`cal__day${selected ? " cal__day--selected" : ""}${
-                isToday && !selected ? " cal__day--today" : ""
-              }`}
+              className={`cal__day${selected ? " cal__day--selected" : ""}`}
               onClick={() => onSelect(date)}
             >
               {day}

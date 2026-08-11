@@ -239,6 +239,7 @@ input.memory-field:focus {
 
 /* ---- Calendar date picker (monochrome white, over the sky) ---- */
 .cal {
+  --cal-font: clamp(0.85rem, 3vw, 1rem); /* one size for every label */
   width: min(92vw, 28rem);
   color: #ffffff;
   pointer-events: auto;
@@ -252,18 +253,18 @@ input.memory-field:focus {
   gap: 0.5rem;
   margin-bottom: 0.6rem;
 }
-.cal__select,
-.cal__year {
+.cal__select {
   background: transparent;
   border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.35);
   color: #ffffff;
   font-family: inherit;
-  font-size: clamp(1rem, 3.5vw, 1.15rem);
+  font-size: var(--cal-font);
   font-weight: 300;
   letter-spacing: 0.02em;
   text-align: center;
-  padding: 0.1rem 0.2rem;
+  text-align-last: center;
+  padding: 0.1rem 0.3rem;
   cursor: pointer;
   outline: none;
   -webkit-appearance: none;
@@ -272,28 +273,10 @@ input.memory-field:focus {
 .cal__select option {
   color: #18181b; /* native dropdown list renders on a light background */
 }
-.cal__year {
-  width: 5ch;
-  -moz-appearance: textfield;
-}
-.cal__year::-webkit-inner-spin-button,
-.cal__year::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
 .cal__grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 0.15rem;
-}
-.cal__weekdays {
-  margin-bottom: 0.3rem;
-}
-.cal__weekday {
-  text-align: center;
-  font-size: 0.7rem;
-  opacity: 0.5;
-  letter-spacing: 0.03em;
 }
 .cal__day {
   aspect-ratio: 1 / 1;
@@ -304,22 +287,13 @@ input.memory-field:focus {
   border: none;
   color: #ffffff;
   font-family: inherit;
-  font-size: clamp(0.8rem, 3vw, 0.95rem);
+  font-size: var(--cal-font);
   font-weight: 300;
   border-radius: 50%;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
 }
-.cal__day:hover {
-  background: rgba(255, 255, 255, 0.16);
-}
-.cal__day--today {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-}
-.cal__day--selected,
-.cal__day--selected:hover {
-  background: #ffffff;
-  color: #18181b;
+.cal__day--selected {
+  box-shadow: inset 0 0 0 1px #ffffff; /* white outline marks the selection */
 }
 .cal__day--empty {
   visibility: hidden;
@@ -330,28 +304,37 @@ input.memory-field:focus {
 .map-picker {
   position: relative;
   width: min(92vw, 28rem);
-  aspect-ratio: 2 / 1;
+  aspect-ratio: 368 / 145; /* matches /map.svg */
   cursor: crosshair;
   pointer-events: auto;
   touch-action: manipulation;
+  overflow: hidden;
 }
-.map-picker__svg {
+.map-picker__img {
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: fill;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
 }
-.map-picker__land {
-  fill: rgba(255, 255, 255, 0.9);
-  fill-rule: evenodd;
-  stroke: none;
-}
-.map-picker__pin {
+/* Full-span crosshair marking the selected point. */
+.map-picker__cross-v {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #ffffff;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3), 0 0 10px rgba(255, 255, 255, 0.6);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  margin-left: -0.5px;
+  background: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+}
+.map-picker__cross-h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  margin-top: -0.5px;
+  background: rgba(255, 255, 255, 0.85);
   pointer-events: none;
 }
