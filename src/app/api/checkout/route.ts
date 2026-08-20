@@ -20,7 +20,7 @@ type AllowedCountry = NonNullable<
 /**
  * Number of completed (paid) edition orders. Uses the Stripe Search API, which
  * is eventually consistent (~up to 1 min lag). `limit: 100` is plenty since we
- * stop selling at editionSize (50). Fails open (returns 0) so a transient
+ * stop selling at PRODUCT.editionSize. Fails open (returns 0) so a transient
  * Stripe error never blocks all sales — overselling is handled by refunding.
  */
 async function soldCount(): Promise<number> {

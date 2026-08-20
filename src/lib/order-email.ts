@@ -68,7 +68,7 @@ export async function sendOrderEmails(session: Stripe.Checkout.Session): Promise
           <p>Thank you${customerName ? `, ${escapeHtml(customerName)}` : ""}.</p>
           <p>Your titanium vase will be anodised with the sky of
              <strong>${escapeHtml(date)}</strong>${place ? ` in <strong>${escapeHtml(place)}</strong>` : ""}.</p>
-          <p>Each piece is made to order, one of a limited edition of 50. Please allow
+          <p>Each piece is made to order, one of a limited edition of 40. Please allow
              up to 6 weeks before it ships — we'll be in touch when it's on its way.</p>
           <p style="color:rgba(24,24,27,0.55)">Sky Vase</p>
         `),

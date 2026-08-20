@@ -376,7 +376,7 @@ function Store() {
                 letterSpacing: "0.01em",
               }}
             >
-              Limited edition of 50, please allow up to 6 weeks before shipping
+              Limited edition of 40, please allow up to 6 weeks before shipping
             </p>
 
             <button
