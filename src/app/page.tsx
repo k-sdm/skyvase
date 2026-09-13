@@ -238,6 +238,19 @@ function Store() {
 
   const ready = parsedDate !== null && resolved !== null;
 
+  // Enter advances to the vase page once both fields are valid.
+  useEffect(() => {
+    if (vaseMode || !ready) return;
+    function onEnter(e: KeyboardEvent) {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      setFaded(true);
+      setTimeout(() => setVaseMode(true), 400);
+    }
+    window.addEventListener("keydown", onEnter);
+    return () => window.removeEventListener("keydown", onEnter);
+  }, [vaseMode, ready]);
+
   // Fake caret cue: sits in the date field until a date parses, then the
   // location field. Only shown when nothing is focused (so it never doubles
   // with the real caret) and the target field is still empty.
